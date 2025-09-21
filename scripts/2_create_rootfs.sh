@@ -125,7 +125,7 @@ echo 'Creating dracut config to force-include UFS storage drivers...'
 # 避免 dracut 在 chroot 环境中因无法检测到目标硬件而遗漏它们。
 cat <<EOF > "/etc/dracut.conf.d/98-nabu-storage.conf"
 # Force-add essential drivers for Qualcomm UFS storage on Nabu.
-add_drivers+=" ufs_qcom ufshcd_platform "
+add_drivers+=" ufs_qcom ufshcd_pltfrm "
 EOF
 echo 'UFS driver config for dracut created.'
 
@@ -151,8 +151,17 @@ echo 'Dracut config created.'
 
 
 # ==========================================================================
-# --- 创建 kernel-install 配置以禁用 rescue 内核安装插件 ---
+# --- 创建 kernel-install 配置 ---
 # ==========================================================================
+# --- 创建 install.conf ---
+echo 'Configuring kernel-install to generate UKIs...'
+mkdir -p "/etc/kernel/"
+cat <<EOF > "/etc/kernel/install.conf"
+# Tell kernel-install to use dracut as the UKI generator.
+uki_generator=dracut
+EOF
+
+# --- 禁用 rescue 内核安装插件 ---
 # 因为在 dnf 中排除了 dracut-config-rescue，所以救援内核不会被安装。
 # 这会导致 51-dracut-rescue.install 插件因找不到文件而失败。
 # 通过创建一个空的配置文件，告诉 kernel-install 跳过这个插件。
@@ -247,14 +256,6 @@ if [ -z "$KERNEL_VERSION" ]; then
 fi
 echo "Detected kernel version for kernel-install: $KERNEL_VERSION"
 
-# --- 2. 配置 kernel-install ---
-echo 'Configuring kernel-install to generate UKIs...'
-mkdir -p "/etc/kernel/"
-cat <<EOF > "/etc/kernel/install.conf"
-# Tell kernel-install to use dracut as the UKI generator.
-uki_generator=dracut
-EOF
-
 # --- 3. 运行一次 kernel-install 来生成 UKI ---
 echo 'Running kernel-install to generate the initial UKI...'
 kernel-install add "$KERNEL_VERSION" "/boot/vmlinuz-$KERNEL_VERSION"
@@ -264,7 +265,7 @@ kernel-install add "$KERNEL_VERSION" "/boot/vmlinuz-$KERNEL_VERSION"
 # ==========================================================================
 # --- 验证 UKI 是否已生成 ---
 # ==========================================================================
-echo "--- STAGE 3: Verifying that the UKI was generated automatically ---"
+echo "Verifying UKI Generation..."
 if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
     echo "SUCCESS: UKI file(s) found after package installation!"
     ls -lR /boot/efi/
