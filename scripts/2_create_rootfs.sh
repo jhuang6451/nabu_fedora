@@ -9,7 +9,6 @@ ARCH="aarch64"
 ROOTFS_NAME="fedora-42-nabu-rootfs.img"
 IMG_SIZE="8G"
 
-#FIXME
 # Mount chroot filesystems 函数
 mount_chroot_fs() {
     echo "Mounting chroot filesystems into $ROOTFS_DIR..."
@@ -107,14 +106,15 @@ set -o pipefail
 # --- 创建 dracut 配置以支持 initramfs 和 UKI 生成 ---
 # ==========================================================================
 
-# --- 新增：禁止在 chroot 中使用 syslog ---
-echo 'Disabling dracut syslog to prevent errors in chroot...'
-cat <<EOF > "/etc/dracut.conf.d/96-no-chroot-logging.conf"
-# This prevents dracut from failing when trying to log to syslog
-# in a chroot environment where the syslog socket (/dev/log) is not available.
-log_syslog="no"
-EOF
-echo 'Dracut syslog logging disabled.'
+# # --- 新增：禁止在 chroot 中使用 syslog ---
+#BUG:This dind't work anyways.
+# echo 'Disabling dracut syslog to prevent errors in chroot...'
+# cat <<EOF > "/etc/dracut.conf.d/96-no-chroot-logging.conf"
+# # This prevents dracut from failing when trying to log to syslog
+# # in a chroot environment where the syslog socket (/dev/log) is not available.
+# log_syslog="no"
+# EOF
+# echo 'Dracut syslog logging disabled.'
 
 # # --- 新增：强制禁用 Host-Only 模式 ---
 #BUG:IS THIS THE CAUSE FOR DURACT TO FAILE???
@@ -222,7 +222,10 @@ dnf install -y --releasever=$RELEASEVER \
     xiaomi-nabu-audio \
     systemd-boot-unsigned \
     binutils \
-    zram-generator
+    zram-generator \
+    grubby \
+    grub2-efi-aa64 \
+    grub2-efi-aa64-modules
 
 # --- 2. 安装内核包---
 # 这会自动触发 kernel-install 来生成 UKI。
