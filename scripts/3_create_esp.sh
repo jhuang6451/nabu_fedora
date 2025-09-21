@@ -33,7 +33,7 @@ trap cleanup EXIT
 # 1. 创建并挂载 ESP
 echo "INFO: Creating ESP image '$ESP_NAME'..."
 fallocate -l "${ESP_SIZE_MB}M" "$ESP_NAME"
-mkfs.vfat -F 32 -n "ESP" "$ESP_NAME"
+mkfs.vfat -F 32 -n "ESPNABU" "$ESP_NAME"
 mount -o loop "$ESP_NAME" "$ESP_MNT_POINT"
 echo "INFO: ESP mounted at '$ESP_MNT_POINT'."
 
