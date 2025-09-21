@@ -84,7 +84,7 @@ COMMIT_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your/r
 RELEASE_NOTES=$(cat <<-EOF
 Automated build of Fedora 42 for Xiaomi Pad 5 (nabu).
 
-*** THIS IS A TEST BUILD - USE AT YOUR OWN RISK ***
+**THIS IS A TEST BUILD - USE AT YOUR OWN RISK**
 
 **Assets:**
 - \`${ROOTFS_FILENAME}.xz\`: The compressed rootfs image. Decompress before use.

@@ -18,12 +18,14 @@ mount_chroot_fs() {
     mount --bind /sys "$ROOTFS_DIR/sys"
     mount --bind /dev "$ROOTFS_DIR/dev"
     mount --bind /dev/pts "$ROOTFS_DIR/dev/pts"
+    mount --bind /run "$ROOTFS_DIR/run"
 }
 
 # Unmount chroot filesystems 函数
 umount_chroot_fs() {
     echo "Unmounting chroot filesystems from $ROOTFS_DIR..."
     # 以相反的顺序卸载，并忽略可能发生的错误
+    umount "$ROOTFS_DIR/run" || true
     umount "$ROOTFS_DIR/dev/pts" || true
     umount "$ROOTFS_DIR/dev" || true
     umount "$ROOTFS_DIR/sys" || true
@@ -171,8 +173,32 @@ EOF
 
 
 # ==========================================================================
-# --- 创建 dracut 配置以支持 UKI 生成 ---
+# --- 创建 dracut 配置以支持 initramfs 和 UKI 生成 ---
 # ==========================================================================
+
+#FIXME
+# --- 新增：强制禁用 Host-Only 模式 ---
+echo 'Forcing generic dracut mode (disabling host-only)...'
+cat <<EOF > "/etc/dracut.conf.d/97-nabu-generic.conf"
+# This is CRITICAL for building a portable image.
+# It prevents dracut from creating an initramfs tailored to the
+# build host, and instead includes a generic set of drivers suitable
+# for the target device.
+hostonly="no"
+EOF
+echo 'Dracut host-only mode disabled.'
+
+# --- 强制包含关键的存储驱动 ---
+echo 'Creating dracut config to force-include UFS storage drivers...'
+# 这是一个关键的健壮性措施，确保 initrd 总是包含启动所需的 UFS 驱动，
+# 避免 dracut 在 chroot 环境中因无法检测到目标硬件而遗漏它们。
+cat <<EOF > "/etc/dracut.conf.d/98-nabu-storage.conf"
+# Force-add essential drivers for Qualcomm UFS storage on Nabu.
+add_drivers+=" ufs_qcom ufshcd_platform "
+EOF
+echo 'UFS driver config for dracut created.'
+
+# --- 动态 dracut 配置以支持自动 UKI 生成 ---
 echo 'Creating DYNAMIC dracut config for automated UKI generation...'
 mkdir -p "/etc/dracut.conf.d/"
 cat <<EOF > "/etc/dracut.conf.d/99-nabu-uki.conf"
@@ -198,6 +224,7 @@ echo 'Dracut config created.'
 # --- 使用 kernel-install 生成初始 UKI ---
 # ==========================================================================
 
+#FIXME
 # --- 0. (fix) 禁用 rescue 内核安装插件 ---
 # 因为在 dnf 中排除了 dracut-config-rescue，所以救援内核不会被安装。
 # 这会导致 51-dracut-rescue.install 插件因找不到文件而失败。
@@ -282,21 +309,6 @@ default fedora-*
 EOF
 #TODO : 这里的 default 需要动态设置为上面生成的那个 entry 文件
 # --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 新增部分：强制包含关键的存储驱动 ---
-# ==========================================================================
-echo 'Creating dracut config to force-include UFS storage drivers...'
-# 这是一个关键的健壮性措施，确保 initrd 总是包含启动所需的 UFS 驱动，
-# 避免 dracut 在 chroot 环境中因无法检测到目标硬件而遗漏它们。
-cat <<EOF > "/etc/dracut.conf.d/98-nabu-storage.conf"
-# Force-add essential drivers for Qualcomm UFS storage on Nabu.
-add_drivers+=" ufs_qcom ufshcd_platform "
-EOF
-echo 'UFS driver config for dracut created.'
-# ==========================================================================
 
 
 
