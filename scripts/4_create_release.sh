@@ -76,8 +76,8 @@ fi
 
 
 # 4. 准备创建 Release
-TAG="fedora-nabu-$(date +'%Y%m%d-%H%M')"
-RELEASE_TITLE="Fedora 42 for Mi Pad 5 (nabu) - ${TAG}"
+TAG="test-fedora-nabu-$(date +'%Y%m%d-%H%M')"
+RELEASE_TITLE="[Test Release] Fedora 42 for Mi Pad 5 (nabu) - ${TAG}"
 
 # 生成更丰富的发布说明
 COMMIT_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your/repo}/commit/${GITHUB_SHA:-HEAD}"
