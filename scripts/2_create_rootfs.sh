@@ -106,28 +106,6 @@ set -o pipefail
 # --- 创建 dracut 配置以支持 initramfs 和 UKI 生成 ---
 # ==========================================================================
 
-# # --- 新增：禁止在 chroot 中使用 syslog ---
-#BUG:This dind't work anyways.
-# echo 'Disabling dracut syslog to prevent errors in chroot...'
-# cat <<EOF > "/etc/dracut.conf.d/96-no-chroot-logging.conf"
-# # This prevents dracut from failing when trying to log to syslog
-# # in a chroot environment where the syslog socket (/dev/log) is not available.
-# log_syslog="no"
-# EOF
-# echo 'Dracut syslog logging disabled.'
-
-# # --- 新增：强制禁用 Host-Only 模式 ---
-#BUG:IS THIS THE CAUSE FOR DURACT TO FAILE???
-# echo 'Forcing generic dracut mode (disabling host-only)...'
-# cat <<EOF > "/etc/dracut.conf.d/97-nabu-generic.conf"
-# # This is CRITICAL for building a portable image.
-# # It prevents dracut from creating an initramfs tailored to the
-# # build host, and instead includes a generic set of drivers suitable
-# # for the target device.
-# hostonly="no"
-# EOF
-# echo 'Dracut host-only mode disabled.'
-
 # --- 强制包含关键的存储驱动 ---
 echo 'Creating dracut config to force-include UFS storage drivers...'
 # 这是一个关键的健壮性措施，确保 initrd 总是包含启动所需的 UFS 驱动，
@@ -225,16 +203,12 @@ dnf install -y --releasever=$RELEASEVER \
     zram-generator \
     grubby \
     grub2-efi-aa64 \
-    grub2-efi-aa64-modules
-
-# --- 2. 安装内核包---
-# 这会自动触发 kernel-install 来生成 UKI。
-echo 'Installing kernel package...'
-dnf install -y --releasever=$RELEASEVER \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
-    --nogpgcheck \
+    grub2-efi-aa64-modules \
     kernel-sm8150
 
+# 我了个豆
+# I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
+# BUT IT JUST IS. OTHERWISE IT WILL COMPLAIN ABOUT MISSING grub.cfg.
 # --------------------------------------------------------------------------
 
 
