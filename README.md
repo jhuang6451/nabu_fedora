@@ -4,13 +4,12 @@ English | [Simplified-Chinese(WIP)](./docs/README.zh.md)
 
 A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image for the Xiaomi Pad 5 (nabu) device (aarch64), along with tutorials and resources for installation. The build process produces a bootable root filesystem and an EFI System Partition (ESP) image.
 
-
-
 > [!NOTE]
 > Initial username is `user` and the password is `fedora`.
 
 > [!IMPORTANT]
-> The ESP partition on your device **HAS TO be labeled** `ESPNABU` , Because this is how fstab finds it. I will find a workaround ASAP.
+> The ESP partition on your device **has to be labeled** `ESPNABU` , Because this is how fstab finds it.
+> If you flash the esp.img directly to your device you will probably be fine as it is created with that label.
 
 ## Disclaimer
 
