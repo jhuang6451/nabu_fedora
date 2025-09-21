@@ -259,24 +259,23 @@ EOF
 
 
 
-# # ==========================================================================
-# # --- 使用 kernel-install 生成初始 UKI ---
-# Not needed because dnf install kernel package will automatically run it.
-# # ==========================================================================
+# ==========================================================================
+# --- temporary fix:使用 kernel-install 生成初始 UKI ---
+# ==========================================================================
 
-# # --- 1. 检测内核版本 ---
-# echo 'Detecting installed kernel version for initial UKI generation...'
-# KERNEL_VERSION=$(ls /lib/modules | sort -rV | head -n1)
-# if [ -z "$KERNEL_VERSION" ]; then
-#     echo 'ERROR: No kernel version found inside chroot!' >&2
-#     exit 1
-# fi
-# echo "Detected kernel version for kernel-install: $KERNEL_VERSION"
+# --- 1. 检测内核版本 ---
+echo 'Detecting installed kernel version for initial UKI generation...'
+KERNEL_VERSION=$(ls /lib/modules | sort -rV | head -n1)
+if [ -z "$KERNEL_VERSION" ]; then
+    echo 'ERROR: No kernel version found inside chroot!' >&2
+    exit 1
+fi
+echo "Detected kernel version for kernel-install: $KERNEL_VERSION"
 
-# # --- 3. 运行一次 kernel-install 来生成 UKI ---
-# echo 'Running kernel-install to generate the initial UKI...'
-# kernel-install add "$KERNEL_VERSION" "/boot/vmlinuz-$KERNEL_VERSION"
-# # --------------------------------------------------------------------------
+# --- 3. 运行一次 kernel-install 来生成 UKI ---
+echo 'Running kernel-install to generate the initial UKI...'
+kernel-install add "$KERNEL_VERSION" "/boot/vmlinuz-$KERNEL_VERSION"
+# --------------------------------------------------------------------------
 
 
 
