@@ -4,9 +4,11 @@ English | [Simplified-Chinese(WIP)](./docs/README.zh.md)
 
 A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image for the Xiaomi Pad 5 (nabu) device (aarch64), along with tutorials and resources for installation. The build process produces a bootable root filesystem and an EFI System Partition (ESP) image.
 
-## Disclaimer
+> [!NOTE]
+> Initial username is `user` and the password is `fedora`.
 
-This project is still in early stages. Use it at your own risk.
+> [!IMPORTANT]
+> This project is still in early stages. Use it at your own risk.
 
 ## Features
 
