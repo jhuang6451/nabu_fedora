@@ -15,7 +15,7 @@ set -o pipefail
 
 # --- 变量定义 ---
 ESP_NAME="esp.img"
-ESP_SIZE_MB=512
+ESP_SIZE_MB=450
 ROOTFS_NAME="fedora-42-nabu-rootfs.img"
 ROOTFS_MNT_POINT=$(mktemp -d)
 ESP_MNT_POINT=$(mktemp -d)
