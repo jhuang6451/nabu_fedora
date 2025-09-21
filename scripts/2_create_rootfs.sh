@@ -136,11 +136,8 @@ cat <<EOF > "/etc/dracut.conf.d/99-nabu-uki.conf"
 # This is a dynamically-aware configuration for dracut.
 uefi=yes
 uefi_stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
-
 # 使用 dracut 内部的 '${kernel}' 变量
 devicetree="/usr/lib/modules/${kernel}/dtb/qcom/sm8150-xiaomi-nabu.dtb"
-
-# --- Robust Kernel Command Line ---
 # uefi_cmdline is the specific option for UKIs.
 uefi_cmdline="root=LABEL=fedora_root rw quiet"
 # For some reason, This doesn't work. So I also add kernel_cmdline below.
@@ -148,6 +145,7 @@ uefi_cmdline="root=LABEL=fedora_root rw quiet"
 EOF
 echo 'Dracut config created.'
 # --------------------------------------------------------------------------
+
 
 
 # ==========================================================================
@@ -170,6 +168,15 @@ mkdir -p "/etc/kernel/install.d"
 touch "/etc/kernel/install.d/51-dracut-rescue.install"
 chmod +x "/etc/kernel/install.d/51-dracut-rescue.install"
 echo 'Rescue kernel plugin disabled.'
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
+# --- 提前创建ESP挂载点，作为UKI生成时的存放路径 ---
+# ==========================================================================
+echo 'Creating ESP mount point for UKI installation...'
+mkdir -p /boot/efi
 # --------------------------------------------------------------------------
 
 
