@@ -198,6 +198,16 @@ echo 'Dracut config created.'
 # --- 使用 kernel-install 生成初始 UKI ---
 # ==========================================================================
 
+# --- 0. (fix) 禁用 rescue 内核安装插件 ---
+# 因为在 dnf 中排除了 dracut-config-rescue，所以救援内核不会被安装。
+# 这会导致 51-dracut-rescue.install 插件因找不到文件而失败。
+# 通过创建一个空的配置文件，告诉 kernel-install 跳过这个插件。
+echo 'Disabling rescue kernel generation to prevent build failure...'
+mkdir -p "/etc/kernel/install.d"
+touch "/etc/kernel/install.d/51-dracut-rescue.install"
+chmod +x "/etc/kernel/install.d/51-dracut-rescue.install"
+echo 'Rescue kernel plugin disabled.'
+
 # --- 1. 检测内核版本 ---
 echo 'Detecting installed kernel version for initial UKI generation...'
 KERNEL_VERSION=$(ls /lib/modules | sort -rV | head -n1)
