@@ -160,7 +160,7 @@ echo 'Rescue kernel plugin disabled.'
 
 
 # ==========================================================================
-# --- Fix： 临时禁用 kernel-install 工具 ---
+# --- 临时禁用 kernel-install 工具 ---
 # ==========================================================================
 # 我们暂时重命名它，以防止 kernel-sm8150 RPM 包在安装过程中自动调用它。
 # 这确保了 UKI 的生成是在一个完全安装好的、稳定的 chroot 环境中进行，而不是在 dnf 事务中。
@@ -168,6 +168,8 @@ echo "Temporarily disabling kernel-install to prevent execution during dnf trans
 if [ -f "/usr/bin/kernel-install" ]; then
     mv /usr/bin/kernel-install /usr/bin/kernel-install.bak
 fi
+
+#TODO: This may no longer be needed, but Im keeping it for now.
 # --------------------------------------------------------------------------
 
 
@@ -209,6 +211,8 @@ dnf install -y --releasever=$RELEASEVER \
 # 我了个豆
 # I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
 # BUT IT JUST IS. OTHERWISE IT WILL COMPLAIN ABOUT MISSING grub.cfg.
+
+# Update: Seems that kernel-install has a hidden dependency on grubby (even though we are not using grub at all).
 # --------------------------------------------------------------------------
 
 
@@ -259,7 +263,7 @@ mkdir -p /boot/efi
 
 
 # ==========================================================================
-# --- temporary fix:使用 kernel-install 生成初始 UKI ---
+# --- 使用 kernel-install 生成初始 UKI ---
 # ==========================================================================
 # --- 0. 恢复 kernel-install 工具 ---
 # 因为之前通过重命名禁用了它。
@@ -267,6 +271,8 @@ echo "Re-enabling kernel-install..."
 if [ -f "/usr/bin/kernel-install.bak" ]; then
     mv /usr/bin/kernel-install.bak /usr/bin/kernel-install
 fi
+#TODO: In theory, the kernel-sm8150 package should automatically run kernel-install and generate the UKI during installation.
+# But I'm not testing it for now. So I will manually run it once here to ensure the UKI is generated.
 
 
 # --- 1. 检测内核版本 ---
@@ -290,10 +296,10 @@ kernel-install add "$KERNEL_VERSION" "/boot/vmlinuz-$KERNEL_VERSION"
 # ==========================================================================
 echo "Verifying UKI Generation..."
 if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
-    echo "SUCCESS: UKI file(s) found after package installation!"
+    echo "SUCCESS: UKI file(s) found!"
     ls -lR /boot/efi/
 else
-    echo "CRITICAL ERROR: No UKI file was generated automatically by the kernel package!" >&2
+    echo "CRITICAL ERROR: No UKI file found!" >&2
     exit 1
 fi
 # --------------------------------------------------------------------------
@@ -466,7 +472,7 @@ chmod 0440 "$SUDOERS_FILE"
 echo "Sudo access for group 'wheel' has been configured via $SUDOERS_FILE."
 # ===========================================================================================
 # --- 临时用户添加结束 ---
-#TODO: remove this temporary user after interactive post-install script is fixed
+#TODO: remove this temporary user after interactive post-install script is fixed.
 # ===========================================================================================
 
 
