@@ -6,8 +6,10 @@ A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image 
 
 > [!NOTE]
 > Initial username is `user` and the password is `fedora`.
+
 > [!NOTE]
 > The system is booted via [UEFI](https://github.com/Project-Aloha/mu_aloha_platforms), [DBKP](https://github.com/rodriguezst/nabu-dualboot-img) is also supported.
+
 > [!IMPORTANT]
 > The ESP partition on your device **has to be labeled** `ESPNABU` , Because this is how fstab finds it.
 > If you flash the esp.img directly to your device you will probably be fine as it is created with that label.
