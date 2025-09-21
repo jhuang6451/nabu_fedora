@@ -104,8 +104,71 @@ set -o pipefail
 
 
 # ==========================================================================
+# --- 创建 dracut 配置以支持 initramfs 和 UKI 生成 ---
+# ==========================================================================
+
+#FIXME
+# --- 新增：强制禁用 Host-Only 模式 ---
+echo 'Forcing generic dracut mode (disabling host-only)...'
+cat <<EOF > "/etc/dracut.conf.d/97-nabu-generic.conf"
+# This is CRITICAL for building a portable image.
+# It prevents dracut from creating an initramfs tailored to the
+# build host, and instead includes a generic set of drivers suitable
+# for the target device.
+hostonly="no"
+EOF
+echo 'Dracut host-only mode disabled.'
+
+# --- 强制包含关键的存储驱动 ---
+echo 'Creating dracut config to force-include UFS storage drivers...'
+# 这是一个关键的健壮性措施，确保 initrd 总是包含启动所需的 UFS 驱动，
+# 避免 dracut 在 chroot 环境中因无法检测到目标硬件而遗漏它们。
+cat <<EOF > "/etc/dracut.conf.d/98-nabu-storage.conf"
+# Force-add essential drivers for Qualcomm UFS storage on Nabu.
+add_drivers+=" ufs_qcom ufshcd_platform "
+EOF
+echo 'UFS driver config for dracut created.'
+
+# --- 动态 dracut 配置以支持自动 UKI 生成 ---
+echo 'Creating DYNAMIC dracut config for automated UKI generation...'
+mkdir -p "/etc/dracut.conf.d/"
+cat <<EOF > "/etc/dracut.conf.d/99-nabu-uki.conf"
+# This is a dynamically-aware configuration for dracut.
+uefi=yes
+uefi_stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
+
+# 使用 dracut 内部的 '${kernel}' 变量
+devicetree="/usr/lib/modules/${kernel}/dtb/qcom/sm8150-xiaomi-nabu.dtb"
+
+# --- Robust Kernel Command Line ---
+# uefi_cmdline is the specific option for UKIs.
+uefi_cmdline="root=LABEL=fedora_root rw quiet"
+# For some reason, This doesn't work. So I also add kernel_cmdline below.
+# kernel_cmdline is a more general option that also gets included.
+EOF
+echo 'Dracut config created.'
+# --------------------------------------------------------------------------
+
+
+# ==========================================================================
+# --- 创建 kernel-install 配置以禁用 rescue 内核安装插件 ---
+# ==========================================================================
+# 因为在 dnf 中排除了 dracut-config-rescue，所以救援内核不会被安装。
+# 这会导致 51-dracut-rescue.install 插件因找不到文件而失败。
+# 通过创建一个空的配置文件，告诉 kernel-install 跳过这个插件。
+echo 'Disabling rescue kernel generation to prevent build failure...'
+mkdir -p "/etc/kernel/install.d"
+touch "/etc/kernel/install.d/51-dracut-rescue.install"
+chmod +x "/etc/kernel/install.d/51-dracut-rescue.install"
+echo 'Rescue kernel plugin disabled.'
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
 # --- 安装必要的软件包 ---
 # ==========================================================================
+# 安装内核包时，postrun 脚本会自动调用 kernel-install 来生成 UKI。
 echo 'Installing additional packages...'
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
@@ -172,67 +235,8 @@ EOF
 
 
 # ==========================================================================
-# --- 创建 dracut 配置以支持 initramfs 和 UKI 生成 ---
-# ==========================================================================
-
-#FIXME
-# --- 新增：强制禁用 Host-Only 模式 ---
-echo 'Forcing generic dracut mode (disabling host-only)...'
-cat <<EOF > "/etc/dracut.conf.d/97-nabu-generic.conf"
-# This is CRITICAL for building a portable image.
-# It prevents dracut from creating an initramfs tailored to the
-# build host, and instead includes a generic set of drivers suitable
-# for the target device.
-hostonly="no"
-EOF
-echo 'Dracut host-only mode disabled.'
-
-# --- 强制包含关键的存储驱动 ---
-echo 'Creating dracut config to force-include UFS storage drivers...'
-# 这是一个关键的健壮性措施，确保 initrd 总是包含启动所需的 UFS 驱动，
-# 避免 dracut 在 chroot 环境中因无法检测到目标硬件而遗漏它们。
-cat <<EOF > "/etc/dracut.conf.d/98-nabu-storage.conf"
-# Force-add essential drivers for Qualcomm UFS storage on Nabu.
-add_drivers+=" ufs_qcom ufshcd_platform "
-EOF
-echo 'UFS driver config for dracut created.'
-
-# --- 动态 dracut 配置以支持自动 UKI 生成 ---
-echo 'Creating DYNAMIC dracut config for automated UKI generation...'
-mkdir -p "/etc/dracut.conf.d/"
-cat <<EOF > "/etc/dracut.conf.d/99-nabu-uki.conf"
-# This is a dynamically-aware configuration for dracut.
-uefi=yes
-uefi_stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
-
-# 使用 dracut 内部的 '${kernel}' 变量
-devicetree="/usr/lib/modules/${kernel}/dtb/qcom/sm8150-xiaomi-nabu.dtb"
-
-# --- Robust Kernel Command Line ---
-# uefi_cmdline is the specific option for UKIs.
-uefi_cmdline="root=LABEL=fedora_root rw quiet"
-# For some reason, This doesn't work. So I also add kernel_cmdline below.
-# kernel_cmdline is a more general option that also gets included.
-EOF
-echo 'Dracut config created.'
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
 # --- 使用 kernel-install 生成初始 UKI ---
 # ==========================================================================
-
-#FIXME
-# --- 0. (fix) 禁用 rescue 内核安装插件 ---
-# 因为在 dnf 中排除了 dracut-config-rescue，所以救援内核不会被安装。
-# 这会导致 51-dracut-rescue.install 插件因找不到文件而失败。
-# 通过创建一个空的配置文件，告诉 kernel-install 跳过这个插件。
-echo 'Disabling rescue kernel generation to prevent build failure...'
-mkdir -p "/etc/kernel/install.d"
-touch "/etc/kernel/install.d/51-dracut-rescue.install"
-chmod +x "/etc/kernel/install.d/51-dracut-rescue.install"
-echo 'Rescue kernel plugin disabled.'
 
 # --- 1. 检测内核版本 ---
 echo 'Detecting installed kernel version for initial UKI generation...'
@@ -257,41 +261,18 @@ kernel-install add "$KERNEL_VERSION" "/boot/vmlinuz-$KERNEL_VERSION"
 # --------------------------------------------------------------------------
 
 
-
-# # ==================================================================================================
-# # --- temporary fix (because of dracut conf issue): 动态查找 UKI 并创建健壮的 system-boot 引导项 ---
-# # ==================================================================================================
-# echo 'Dynamically locating the generated UKI file...'
-# # 使用 find 查找由 kernel-install 生成的、包含特定内核版本的 UKI 文件
-# UKI_FILE_PATH=$(find "/boot/efi/EFI/Linux/" -name "linux-${KERNEL_VERSION}-*.efi" -print -quit)
-
-# if [ -z "$UKI_FILE_PATH" ]; then
-#     echo 'CRITICAL ERROR: Could not find the generated UKI file!' >&2
-#     exit 1
-# fi
-
-# # --- 从完整路径中提取文件名 ---
-# UKI_BASENAME=$(basename "$UKI_FILE_PATH")
-# echo "Found UKI: $UKI_BASENAME"
-
-# echo 'Creating a robust boot loader entry...'
-# ENTRY_DIR="/boot/efi/loader/entries"
-# # 我们使用一个固定的、可预测的文件名，以便 'loader.conf' 可以轻松地将其设为默认
-# ENTRY_FILE="${ENTRY_DIR}/fedora-nabu.conf" 
-
-# mkdir -p "$ENTRY_DIR"
-
-# cat <<EOF > "$ENTRY_FILE"
-# # Generated by Fedora-Nabu build script
-# title      Fedora Linux for Xiaomi Pad 5 (Nabu)
-# efi        /EFI/Linux/${UKI_BASENAME}
-# options    root=LABEL=fedora_root rw quiet
-# EOF
-
-# echo "Boot loader entry created at '$ENTRY_FILE'"
-# # ==================================================================================================
-# # --- temporary fix end ---
-# # ==================================================================================================
+# ==========================================================================
+# --- 验证 UKI 是否已生成 ---
+# ==========================================================================
+echo "--- STAGE 3: Verifying that the UKI was generated automatically ---"
+if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
+    echo "SUCCESS: UKI file(s) found after package installation!"
+    ls -lR /boot/efi/
+else
+    echo "CRITICAL ERROR: No UKI file was generated automatically by the kernel package!" >&2
+    exit 1
+fi
+# --------------------------------------------------------------------------
 
 
 
