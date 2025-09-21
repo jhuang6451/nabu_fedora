@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# ----- THIS VERSION IS FOR TESTING ONLY -----
-
 set -e
 
 # 定义变量
