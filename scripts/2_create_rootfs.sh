@@ -116,16 +116,17 @@ log_syslog="no"
 EOF
 echo 'Dracut syslog logging disabled.'
 
-# --- 新增：强制禁用 Host-Only 模式 ---
-echo 'Forcing generic dracut mode (disabling host-only)...'
-cat <<EOF > "/etc/dracut.conf.d/97-nabu-generic.conf"
-# This is CRITICAL for building a portable image.
-# It prevents dracut from creating an initramfs tailored to the
-# build host, and instead includes a generic set of drivers suitable
-# for the target device.
-hostonly="no"
-EOF
-echo 'Dracut host-only mode disabled.'
+# # --- 新增：强制禁用 Host-Only 模式 ---
+#BUG:IS THIS THE CAUSE FOR DURACT TO FAILE???
+# echo 'Forcing generic dracut mode (disabling host-only)...'
+# cat <<EOF > "/etc/dracut.conf.d/97-nabu-generic.conf"
+# # This is CRITICAL for building a portable image.
+# # It prevents dracut from creating an initramfs tailored to the
+# # build host, and instead includes a generic set of drivers suitable
+# # for the target device.
+# hostonly="no"
+# EOF
+# echo 'Dracut host-only mode disabled.'
 
 # --- 强制包含关键的存储驱动 ---
 echo 'Creating dracut config to force-include UFS storage drivers...'
