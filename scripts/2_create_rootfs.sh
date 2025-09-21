@@ -19,14 +19,12 @@ mount_chroot_fs() {
     mount --bind /sys "$ROOTFS_DIR/sys"
     mount --bind /dev "$ROOTFS_DIR/dev"
     mount --bind /dev/pts "$ROOTFS_DIR/dev/pts"
-    mount --bind /run "$ROOTFS_DIR/run"
 }
 
 # Unmount chroot filesystems 函数
 umount_chroot_fs() {
     echo "Unmounting chroot filesystems from $ROOTFS_DIR..."
     # 以相反的顺序卸载，并忽略可能发生的错误
-    umount "$ROOTFS_DIR/run" || true
     umount "$ROOTFS_DIR/dev/pts" || true
     umount "$ROOTFS_DIR/dev" || true
     umount "$ROOTFS_DIR/sys" || true
