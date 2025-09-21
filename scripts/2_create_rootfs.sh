@@ -107,7 +107,15 @@ set -o pipefail
 # --- 创建 dracut 配置以支持 initramfs 和 UKI 生成 ---
 # ==========================================================================
 
-#FIXME
+# --- 新增：禁止在 chroot 中使用 syslog ---
+echo 'Disabling dracut syslog to prevent errors in chroot...'
+cat <<EOF > "/etc/dracut.conf.d/96-no-chroot-logging.conf"
+# This prevents dracut from failing when trying to log to syslog
+# in a chroot environment where the syslog socket (/dev/log) is not available.
+log_syslog="no"
+EOF
+echo 'Dracut syslog logging disabled.'
+
 # --- 新增：强制禁用 Host-Only 模式 ---
 echo 'Forcing generic dracut mode (disabling host-only)...'
 cat <<EOF > "/etc/dracut.conf.d/97-nabu-generic.conf"
@@ -173,10 +181,14 @@ echo 'Rescue kernel plugin disabled.'
 
 
 # ==========================================================================
-# --- 提前创建ESP挂载点，作为UKI生成时的存放路径 ---
+# --- Fix： 临时禁用 kernel-install 工具 ---
 # ==========================================================================
-echo 'Creating ESP mount point for UKI installation...'
-mkdir -p /boot/efi
+# 我们暂时重命名它，以防止 kernel-sm8150 RPM 包在安装过程中自动调用它。
+# 这确保了 UKI 的生成是在一个完全安装好的、稳定的 chroot 环境中进行，而不是在 dnf 事务中。
+echo "Temporarily disabling kernel-install to prevent execution during dnf transaction..."
+if [ -f "/usr/bin/kernel-install" ]; then
+    mv /usr/bin/kernel-install /usr/bin/kernel-install.bak
+fi
 # --------------------------------------------------------------------------
 
 
@@ -260,8 +272,24 @@ EOF
 
 
 # ==========================================================================
+# --- 提前创建ESP挂载点，作为UKI生成时的存放路径 ---
+# ==========================================================================
+echo 'Creating ESP mount point for UKI installation...'
+mkdir -p /boot/efi
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
 # --- temporary fix:使用 kernel-install 生成初始 UKI ---
 # ==========================================================================
+# --- 0. 恢复 kernel-install 工具 ---
+# 因为之前通过重命名禁用了它。
+echo "Re-enabling kernel-install..."
+if [ -f "/usr/bin/kernel-install.bak" ]; then
+    mv /usr/bin/kernel-install.bak /usr/bin/kernel-install
+fi
+
 
 # --- 1. 检测内核版本 ---
 echo 'Detecting installed kernel version for initial UKI generation...'
