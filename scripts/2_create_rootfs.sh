@@ -248,7 +248,7 @@ echo 'Creating /etc/fstab for automatic partition mounting...'
 cat <<EOF > "/etc/fstab"
 # /etc/fstab: static file system information.
 LABEL=fedora_root  /              ext4    defaults,x-systemd.device-timeout=0   1 1
-LABEL=ESPNABU          /boot/efi      vfat    umask=0077,shortname=winnt            0 2
+LABEL=ESPNABU          /boot/efi      vfat    umask=0077,shortname=winnt            0 0
 EOF
 # --------------------------------------------------------------------------
 
@@ -517,26 +517,51 @@ rmdir "$MOUNT_DIR"
 trap - EXIT # 再次重置 trap
 echo "Rootfs image created as $ROOTFS_NAME"
 
-# 5. 最小化并压缩 img 文件
-echo "Minimizing the image file..."
-e2fsck -f -y "$ROOTFS_NAME" || true # 忽略可能出现的“clean”错误
+
+
+# 5. fix:最小化并压缩 img 文件 (更安全的方法)
+echo "Minimizing the image file safely..."
+# 强制进行文件系统检查并修复
+e2fsck -f -y "$ROOTFS_NAME" || true
+
+# 将文件系统缩小到其内容的最小尺寸
 echo "Resizing filesystem to minimum size..."
 resize2fs -M "$ROOTFS_NAME"
 
-# 更稳健地获取块大小和块数量
-echo "Calculating new image size..."
-BLOCK_INFO=$(dumpe2fs -h "$ROOTFS_NAME" 2>/dev/null)
-BLOCK_SIZE=$(echo "$BLOCK_INFO" | grep 'Block size:' | awk '{print $3}')
-BLOCK_COUNT=$(echo "$BLOCK_INFO" | grep 'Block count:' | awk '{print $3}')
+# 再次运行 e2fsck 以确保缩小后的文件系统状态一致
+e2fsck -f -y "$ROOTFS_NAME" || true
+
+# --- 关键修复：计算新尺寸时增加安全边界 ---
+echo "Calculating new, safe image size..."
+# 从 dumpe2fs 获取文件系统所需的最小块数
+MIN_BLOCKS=$(dumpe2fs -h "$ROOTFS_NAME" 2>/dev/null | grep 'Block count:' | awk '{print $3}')
+# 获取文件系统的块大小 (以 KB 为单位)
+BLOCK_SIZE_KB=$(dumpe2fs -h "$ROOTFS_NAME" 2>/dev/null | grep 'Block size:' | awk '{print $3 / 1024}')
 
 # 检查是否成功获取了数值
-if ! [[ "$BLOCK_SIZE" =~ ^[0-9]+$ ]] || ! [[ "$BLOCK_COUNT" =~ ^[0-9]+$ ]]; then
+if ! [[ "$MIN_BLOCKS" =~ ^[0-9]+$ ]] || ! [[ "$BLOCK_SIZE_KB" =~ ^[0-9]+$ ]]; then
     echo "Error: Failed to retrieve block size or block count from image."
     exit 1
 fi
 
-# 计算新的大小并进行 truncate
-NEW_SIZE=$((BLOCK_SIZE * BLOCK_COUNT))
-echo "New calculated size is $NEW_SIZE bytes."
-truncate -s $NEW_SIZE "$ROOTFS_NAME"
-echo "Image minimized successfully."
+# 计算文件系统所需的最小尺寸 (以 KB 为单位)
+MIN_SIZE_KB=$((MIN_BLOCKS * BLOCK_SIZE_KB))
+
+# 增加一个 200MB 的安全余量 (204800 KB)
+# 这确保了 truncate 永远不会切掉文件系统的实际数据
+SAFETY_MARGIN_KB=204800
+NEW_SIZE_KB=$((MIN_SIZE_KB + SAFETY_MARGIN_KB))
+
+echo "Filesystem minimum size: ${MIN_SIZE_KB} KB"
+echo "Adding safety margin: ${SAFETY_MARGIN_KB} KB"
+echo "New safe image size: ${NEW_SIZE_KB} KB"
+
+# 使用 truncate 将镜像文件调整到新的、带有安全边界的尺寸
+truncate -s "${NEW_SIZE_KB}K" "$ROOTFS_NAME"
+echo "Image minimized successfully with safety margin."
+
+# 最后，让 resize2fs 将文件系统扩展回填满整个镜像文件
+# 这样镜像内部的文件系统就是完全健康的
+echo "Expanding filesystem to fill the new safe-sized image..."
+resize2fs "$ROOTFS_NAME"
+echo "Filesystem expanded. Image is now minimized."
