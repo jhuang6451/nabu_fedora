@@ -9,6 +9,7 @@ ARCH="aarch64"
 ROOTFS_NAME="fedora-42-nabu-rootfs.img"
 IMG_SIZE="8G"
 
+#FIXME
 # Mount chroot filesystems 函数
 mount_chroot_fs() {
     echo "Mounting chroot filesystems into $ROOTFS_DIR..."
@@ -307,7 +308,7 @@ timeout 6
 console-mode max
 default fedora-*
 EOF
-#TODO : 这里的 default 需要动态设置为上面生成的那个 entry 文件
+#TODO : 这里的 default 配置有没有问题？
 # --------------------------------------------------------------------------
 
 
