@@ -129,6 +129,7 @@ devicetree="/usr/lib/modules/${kernel}/dtb/qcom/sm8150-xiaomi-nabu.dtb"
 uefi_cmdline="root=LABEL=fedora_root rw quiet"
 # For some reason, This doesn't work. So I also add kernel_cmdline below.
 # kernel_cmdline is a more general option that also gets included.
+kernel_cmdline="root=LABEL=fedora_root rw quiet"
 EOF
 echo 'Dracut config created.'
 # --------------------------------------------------------------------------
