@@ -177,7 +177,8 @@ echo 'Rescue kernel plugin disabled.'
 # ==========================================================================
 # --- 安装必要的软件包 ---
 # ==========================================================================
-# 安装内核包时，postrun 脚本会自动调用 kernel-install 来生成 UKI。
+# --- 1. 安装基础软件包 ---
+# systemd-boot-unsigned会提供生成UKI所需的linuxaarch64.efi.stub。
 echo 'Installing additional packages...'
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
@@ -197,12 +198,20 @@ dnf install -y --releasever=$RELEASEVER \
     pd-mapper \
     rmtfs \
     qrtr \
-    kernel-sm8150 \
     xiaomi-nabu-firmware \
     xiaomi-nabu-audio \
     systemd-boot-unsigned \
     binutils \
     zram-generator
+
+# --- 2. 安装内核包---
+# 这会自动触发 kernel-install 来生成 UKI。
+echo 'Installing kernel package...'
+dnf install -y --releasever=$RELEASEVER \
+    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
+    --nogpgcheck \
+    kernel-sm8150
+
 # --------------------------------------------------------------------------
 
 
