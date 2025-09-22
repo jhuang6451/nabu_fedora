@@ -4,11 +4,14 @@ English | [Simplified-Chinese(WIP)](./docs/README.zh.md)
 
 A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image for the Xiaomi Pad 5 (nabu) device (aarch64), along with tutorials and resources for installation. The build process produces a bootable root filesystem and an EFI System Partition (ESP) image.
 
+> [!IMPORTANT]
+> **This project is still in early stages. Please stay tuned for formal release!!!**
+
 > [!NOTE]
 > Initial username is `user` and the password is `fedora`.
 
 > [!NOTE]
-> The system is booted via [UEFI](https://github.com/Project-Aloha/mu_aloha_platforms), [DBKP](https://github.com/rodriguezst/nabu-dualboot-img) is also supported.
+> The system is designed to work with [UEFI](https://github.com/Project-Aloha/mu_aloha_platforms), [DBKP](https://github.com/rodriguezst/nabu-dualboot-img) is also supported.
 
 > [!IMPORTANT]
 > The ESP partition on your device **has to be labeled** `ESPNABU` , Because this is how fstab finds it.
@@ -16,7 +19,7 @@ A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image 
 
 ## Disclaimer
 
-**This project is still in early stages. Use it at your own risk.**
+**This project is still in early stages. Please stay tuned for formal release!!!**
 
 ## Features
 
@@ -26,12 +29,14 @@ A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image 
 
 ## Todos
 
-* [x] Fix UKI boot.
-* [ ] Some package update test.
-* [ ] Improve esp generate logic.
+* [x] Fix UKI generation.
+* [ ] Fix efi installation.
+* [ ] Write install script.
+* [ ] Optimize package selection.
 * [ ] Complete the docs.
 * [ ] Write scripts for extended rootfs (Includes a standard graphical desktop environment and common utils).
 * [ ] Implement post-install scripts.
+* [ ] Kernel update test.
 
 ## Installation Tutorial
 
