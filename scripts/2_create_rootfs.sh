@@ -203,7 +203,8 @@ dnf install -y --releasever=$RELEASEVER \
     pd-mapper \
     rmtfs \
     qrtr \
-    zram-generator
+    zram-generator \
+    @gnome-desktop
 
 # I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
 # BUT IT JUST IS. OTHERWISE IT WILL COMPLAIN ABOUT MISSING grub.cfg.
