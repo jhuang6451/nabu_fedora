@@ -501,7 +501,7 @@ trap - EXIT
 # 6. 将 rootfs 打包为 img 文件 (注意：这里不再需要 dnf clean all)
 echo "Creating rootfs image: $ROOTFS_NAME (size: $IMG_SIZE)..."
 fallocate -l "$IMG_SIZE" "$ROOTFS_NAME"
-mkfs.ext4 -L fedora_root -F "$ROOTFS_NAME" # 设置标签
+mkfs.ext4 -L fedora_root -F -E lazy_itable_init=0,lazy_journal_init=0 "$ROOTFS_NAME" # 设置标签并禁用 lazy init
 MOUNT_DIR=$(mktemp -d)
 trap 'rmdir -- "$MOUNT_DIR"' EXIT # 确保临时挂载目录在脚本退出时被清理
 mount -o loop "$ROOTFS_NAME" "$MOUNT_DIR"
