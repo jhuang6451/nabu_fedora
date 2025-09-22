@@ -133,8 +133,7 @@ if [ ! -f "$EFI_ZIP_NAME" ]; then
 fi
 
 # 7. 准备创建 Release
-#TAG="fedora-nabu-$(date +'%Y%m%d-%H%M')"
-TAG="test"
+TAG="test - $(date +'%Y%m%d-%H%M')"
 #RELEASE_TITLE="Fedora 42 for Mi Pad 5 (nabu) - ${TAG}"
 RELEASE_TITLE="Test Build - $(date +'%Y%m%d-%H%M')"
 # 生成新的发布说明
