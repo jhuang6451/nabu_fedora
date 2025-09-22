@@ -40,7 +40,10 @@ ROOTFS_COMPRESSED_PATH="${ROOTFS_PATH}.xz"
 
 # --- 临时目录和挂载点 ---
 ROOTFS_MNT_POINT=$(mktemp -d)
-EFI_FILES_DIR=$(mktemp -d)
+EFI_BUILD_DIR=$(mktemp -d)
+EFI_IMG_PATH="${EFI_BUILD_DIR}/esp.img"
+EFI_MNT_POINT="${EFI_BUILD_DIR}/esp"
+mkdir -p "$EFI_MNT_POINT"
 
 # --- 清理函数 ---
 cleanup() {
@@ -48,8 +51,9 @@ cleanup() {
     # sync
     # Unmount quietly, ignoring errors if it's not mounted
     umount "$ROOTFS_MNT_POINT" 2>/dev/null || true
+    umount "$EFI_MNT_POINT" 2>/dev/null || true
     # Remove temporary directories
-    rm -rf "$ROOTFS_MNT_POINT" "$EFI_FILES_DIR"
+    rm -rf "$ROOTFS_MNT_POINT" "$EFI_BUILD_DIR"
     echo "INFO: Cleanup complete."
 }
 # Register the cleanup function to run on script exit (normal or error)
@@ -68,7 +72,15 @@ if [ ! -f "$ROOTFS_PATH" ]; then
 fi
 echo "INFO: Rootfs artifact found."
 
-# 2. 挂载 Rootfs 镜像并提取 EFI 文件
+# 2. 创建一个临时的 FAT32 镜像作为 ESP
+ESP_SIZE_MB=100
+echo "INFO: Creating a temporary ${ESP_SIZE_MB}MB FAT32 image for the ESP..."
+fallocate -l "${ESP_SIZE_MB}M" "$EFI_IMG_PATH"
+mkfs.vfat -F 32 "$EFI_IMG_PATH"
+mount -o loop "$EFI_IMG_PATH" "$EFI_MNT_POINT"
+echo "INFO: Temporary ESP image mounted at '${EFI_MNT_POINT}'."
+
+# 3. 挂载 Rootfs 镜像并提取 EFI 文件到 ESP 镜像中
 echo "INFO: Mounting rootfs image to extract EFI files..."
 mount -o loop,ro "$ROOTFS_PATH" "$ROOTFS_MNT_POINT"
 
@@ -79,30 +91,30 @@ if [ ! -d "$ROOTFS_EFI_CONTENT" ] || [ -z "$(ls -A "$ROOTFS_EFI_CONTENT")" ]; th
     exit 1
 fi
 
-echo "INFO: Copying EFI content from rootfs..."
-rsync -a "$ROOTFS_EFI_CONTENT" "$EFI_FILES_DIR/"
+echo "INFO: Copying EFI content from rootfs to temporary ESP..."
+rsync -a "$ROOTFS_EFI_CONTENT" "$EFI_MNT_POINT/"
 
-# 提取完成后立即卸载
+# 提取完成后立即卸载 rootfs
 echo "INFO: Unmounting rootfs image..."
 umount "$ROOTFS_MNT_POINT"
 
-# 3. 安装 systemd-boot 到 EFI 目录
-echo "INFO: Installing systemd-boot into the EFI directory..."
-if ! bootctl --esp-path="$EFI_FILES_DIR" install; then
+# 4. 安装 systemd-boot 到 ESP 镜像
+echo "INFO: Installing systemd-boot into the ESP image..."
+if ! bootctl --esp-path="$EFI_MNT_POINT" install; then
     echo "ERROR: bootctl install failed." >&2
-    echo "--- Listing contents of EFI_FILES_DIR ('${EFI_FILES_DIR}') ---"
-    ls -R "${EFI_FILES_DIR}"
+    echo "--- Listing contents of EFI_MNT_POINT ('${EFI_MNT_POINT}') ---"
+    ls -R "${EFI_MNT_POINT}"
     echo "--------------------------------------------------------"
     exit 1
 fi
 echo "INFO: systemd-boot installed successfully."
 
-# 4. 创建 EFI zip 压缩包
+# 5. 创建 EFI zip 压缩包
 echo "INFO: Creating '${EFI_ZIP_NAME}'..."
-# We run the zip command in a subshell. This prevents 'cd' from affecting the
+# Runnin' the zip command in a subshell. This prevents 'cd' from affecting the
 # main script's working directory. The zip is created in the original PWD.
 ORIGINAL_PWD=$PWD
-(cd "$EFI_FILES_DIR" && zip -r "$ORIGINAL_PWD/${EFI_ZIP_NAME}" .)
+(cd "$EFI_MNT_POINT" && zip -r "$ORIGINAL_PWD/${EFI_ZIP_NAME}" .)
 echo "INFO: EFI zip package created successfully."
 
 # 5. 将 rootfs img 文件高效压缩为 .xz
