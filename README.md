@@ -11,11 +11,8 @@ A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image 
 > Initial username is `user` and the password is `fedora`.
 
 > [!NOTE]
-> The system is designed to work with [UEFI](https://github.com/Project-Aloha/mu_aloha_platforms), [DBKP](https://github.com/rodriguezst/nabu-dualboot-img) is also supported.
+> The system is designed to work with [UEFI](https://github.com/Project-Aloha/mu_aloha_platforms), [DBKP](https://github.com/rodriguezst/nabu-dualboot-img) is also supported.As of [U-Boot](https://gitlab.com/sm8150-mainline/u-boot), I've yet to test it out.
 
-> [!IMPORTANT]
-> The ESP partition on your device **has to be labeled** `ESPNABU` , Because this is how fstab finds it.
-> If you flash the esp.img directly to your device you will probably be fine as it is created with that label.
 
 ## Disclaimer
 
@@ -30,10 +27,10 @@ A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image 
 ## Todos
 
 * [x] Fix UKI generation.
-* [ ] Fix efi installation.
-* [ ] Write install script.
+* [x] Fix efi installation.
 * [ ] Optimize package selection.
-* [ ] Complete the docs.
+* [ ] Complete installation tutorial docs.
+* [ ] (Maybe) write install script.
 * [ ] Write scripts for extended rootfs (Includes a standard graphical desktop environment and common utils).
 * [ ] Implement post-install scripts.
 * [ ] Kernel update test.
@@ -45,6 +42,15 @@ A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image 
 ## Chats & Support Groups
 
 * [nabulinux](https://t.me/nabulinux) - Telegram group for Xiaomi Pad 5 linux.
+
+## Credits
+
+* [@ArKT-7](https://github.com/ArKT-7) for modded linux TWRP for nabu.
+* [@rodriguezst](https://github.com/rodriguezst) for UEFI kernel pacher.
+* [Project-Aloha](https://github.com/Project-Aloha) for UEFI development.
+* [@gmankab](https://github.com/gmankab), [@Timofey](https://github.com/timoxa0), [@nik012003](https://github.com/nik012003) and all the other developers for building linux distros for nabu.
+* Everyone who contributed to sm8150-mainline.
+* Everyone trying this project out or giving me advice.
 
 ## See Also
 
