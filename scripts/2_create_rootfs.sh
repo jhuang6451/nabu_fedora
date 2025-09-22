@@ -186,65 +186,54 @@ dnf install -y --releasever=$RELEASEVER \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False --exclude dracut-config-rescue \
+    @hardware-support \
+    @standard \
+    @base-graphical \
+    NetworkManager-tui \
     systemd-boot-unsigned \
     kernel-sm8150 \
     xiaomi-nabu-firmware \
+    xiaomi-nabu-audio \
     glibc-langpack-en \
     grubby \
-    binutils
-
+    binutils \
+    systemd-resolved \
+    qbootctl \
+    tqftpserv \
+    pd-mapper \
+    rmtfs \
+    qrtr \
+    zram-generator
 
 # I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
 # BUT IT JUST IS. OTHERWISE IT WILL COMPLAIN ABOUT MISSING grub.cfg.
 
 # Update: Seems that kernel-install has a hidden dependency on grubby (even though we are not using grub at all).
 # --------------------------------------------------------------------------
-#FIXME: 暂时不安装一些包，完整包猎豹备份：
-    # @hardware-support \
-    # @standard \
-    # @base-graphical \
-    # NetworkManager-tui \
-    # git \
-    # vim \
-    # glibc-langpack-en \
-    # systemd-resolved \
-    # qbootctl \
-    # tqftpserv \
-    # pd-mapper \
-    # rmtfs \
-    # qrtr \
-    # xiaomi-nabu-firmware \
-    # xiaomi-nabu-audio \
-    # systemd-boot-unsigned \
-    # binutils \
-    # zram-generator \
-    # grubby \
-    # grub2-efi-aa64 \
-    # grub2-efi-aa64-modules \
-    # kernel-sm8150
 
 
-#FIXME
-# # ==========================================================================
-# # --- 创建并启用 tqftpserv, rmtfs 和 qbootctl 服务 ---
-# # ==========================================================================
-# echo 'Creating qbootctl.service file...'
-# cat <<EOF > "/etc/systemd/system/qbootctl.service"
-# [Unit]
-# Description=Qualcomm boot slot ctrl mark boot successful
-# [Service]
-# ExecStart=/usr/bin/qbootctl -m
-# Type=oneshot
-# RemainAfterExit=yes
-# [Install]
-# WantedBy=multi-user.target
-# EOF
 
-# echo 'Enabling systemd services...'
-# systemctl enable tqftpserv.service
-# systemctl enable rmtfs.service
-# systemctl enable qbootctl.service
-# # --------------------------------------------------------------------------
+
+# ==========================================================================
+# --- 创建并启用 tqftpserv, rmtfs 和 qbootctl 服务 ---
+# ==========================================================================
+echo 'Creating qbootctl.service file...'
+cat <<EOF > "/etc/systemd/system/qbootctl.service"
+[Unit]
+Description=Qualcomm boot slot ctrl mark boot successful
+[Service]
+ExecStart=/usr/bin/qbootctl -m
+Type=oneshot
+RemainAfterExit=yes
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo 'Enabling systemd services...'
+systemctl enable tqftpserv.service
+systemctl enable rmtfs.service
+systemctl enable qbootctl.service
+# --------------------------------------------------------------------------
 
 
 
@@ -329,28 +318,28 @@ EOF
 # --------------------------------------------------------------------------
 
 
-#FIXME
-# # ==========================================================================
-# # --- 配置 zram 交换分区 ---
-# # ==========================================================================
-# echo 'Configuring zram swap for improved performance under memory pressure...'
-# # zram-generator-defaults is installed but we want to provide our own config
-# mkdir -p "/etc/systemd/"
-# cat <<EOF > "/etc/systemd/zram-generator.conf"
-# # This configuration enables a compressed RAM-based swap device (zram).
-# # It significantly improves system responsiveness and multitasking on
-# # devices with a fixed amount of RAM.
-# [zram0]
-# # Set the uncompressed swap size to be equal to the total physical RAM.
-# # This is a balanced value providing a large swap space without risking
-# # system thrashing under heavy load.
-# zram-size = ram
 
-# # Use zstd compression for the best balance of speed and compression ratio.
-# compression-algorithm = zstd
-# EOF
-# echo 'Zram swap configured.'
-# # ==========================================================================
+# ==========================================================================
+# --- 配置 zram 交换分区 ---
+# ==========================================================================
+echo 'Configuring zram swap for improved performance under memory pressure...'
+# zram-generator-defaults is installed but we want to provide our own config
+mkdir -p "/etc/systemd/"
+cat <<EOF > "/etc/systemd/zram-generator.conf"
+# This configuration enables a compressed RAM-based swap device (zram).
+# It significantly improves system responsiveness and multitasking on
+# devices with a fixed amount of RAM.
+[zram0]
+# Set the uncompressed swap size to be equal to the total physical RAM.
+# This is a balanced value providing a large swap space without risking
+# system thrashing under heavy load.
+zram-size = ram
+
+# Use zstd compression for the best balance of speed and compression ratio.
+compression-algorithm = zstd
+EOF
+echo 'Zram swap configured.'
+# ==========================================================================
 
 
 
@@ -434,13 +423,13 @@ echo 'First-boot services created and enabled.'
 # --------------------------------------------------------------------------
 
 
-#FIXME
-# # ==========================================================================
-# # --- 添加创建者签名到 /etc/os-release ---
-# # ==========================================================================
-# echo 'Adding creator signature to /etc/os-release...'
-# echo 'BUILD_CREATOR="jhuang6451"' >> "/etc/os-release"
-# # --------------------------------------------------------------------------
+
+# ==========================================================================
+# --- 添加创建者签名到 /etc/os-release ---
+# ==========================================================================
+echo 'Adding creator signature to /etc/os-release...'
+echo 'BUILD_CREATOR="jhuang6451(https://github.com/jhuang6451)"' >> "/etc/os-release"
+# --------------------------------------------------------------------------
 
 
 
