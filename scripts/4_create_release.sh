@@ -121,9 +121,10 @@ if [ ! -f "$EFI_ZIP_NAME" ]; then
 fi
 
 # 7. 准备创建 Release
-TAG="fedora-nabu-$(date +'%Y%m%d-%H%M')"
-RELEASE_TITLE="Fedora 42 for Mi Pad 5 (nabu) - ${TAG}"
-
+#TAG="fedora-nabu-$(date +'%Y%m%d-%H%M')"
+TAG="test"
+#RELEASE_TITLE="Fedora 42 for Mi Pad 5 (nabu) - ${TAG}"
+RELEASE_TITLE="Test Build - $(date +'%Y%m%d-%H%M')"
 # 生成新的发布说明
 COMMIT_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your/repo}/commit/${GITHUB_SHA:-HEAD}"
 RELEASE_NOTES=$(cat <<EOF
@@ -132,12 +133,9 @@ Automated build of Fedora 42 for Xiaomi Pad 5 (nabu).
 **THIS IS AN EXPERIMENTAL BUILD - USE AT YOUR OWN RISK**
 
 **Assets:**
-- 
-${ROOTFS_FILENAME}.xz
-: The compressed rootfs image. Decompress before use.
-- 
-${EFI_ZIP_NAME}
-: Contains the bootloader and kernel (UKI). Unzip and copy the contents to your existing ESP partition.
+
+- ${ROOTFS_FILENAME}.xz - The compressed rootfs image. Decompress before use.
+- ${EFI_ZIP_NAME} - Contains the bootloader and kernel (UKI) and systemed-boot. Unzip and copy the contents to your existing ESP partition.
 
 This build is based on commit: [${GITHUB_SHA:0:7}](${COMMIT_URL})
 EOF
