@@ -61,7 +61,7 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 * [@rodriguezst](https://github.com/rodriguezst) for UEFI kernel pacher.
 * [Project-Aloha](https://github.com/Project-Aloha) for UEFI development.
 * [@gmankab](https://github.com/gmankab), [@Timofey](https://github.com/timoxa0), [@nik012003](https://github.com/nik012003) and all the other developers for building linux distros for nabu.
-* Everyone who contributed to sm8150-mainline.
+* [@panpantepan](https://gitlab.com/panpanpanpan), [map220v](https://github.com/map220v), [@nik012003](https://github.com/nik012003) and all the other developers who contributed to mainlining.
 * Everyone trying this project out or giving me advice.
 
 ## See Also
