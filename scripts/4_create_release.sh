@@ -80,11 +80,10 @@ umount "$ROOTFS_MNT_POINT"
 
 # 3. 创建 EFI zip 压缩包
 echo "INFO: Creating '${EFI_ZIP_NAME}'..."
-# We change into the directory to avoid including the parent path in the zip.
-cd "$EFI_FILES_DIR"
-zip -r "../${EFI_ZIP_NAME}" .
-cd .. # Go back to the original directory
-# The zip file is now at the root of the workspace, e.g., ./efi-files.zip
+# We run the zip command in a subshell. This prevents 'cd' from affecting the
+# main script's working directory. The zip is created in the original PWD.
+ORIGINAL_PWD=$PWD
+(cd "$EFI_FILES_DIR" && zip -r "$ORIGINAL_PWD/${EFI_ZIP_NAME}" .)
 echo "INFO: EFI zip package created successfully."
 
 # 4. 将 rootfs img 文件高效压缩为 .xz
