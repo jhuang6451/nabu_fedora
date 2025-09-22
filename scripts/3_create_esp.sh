@@ -22,6 +22,7 @@ ESP_MNT_POINT=$(mktemp -d)
 
 cleanup() {
     echo "INFO: Performing cleanup..."
+    sync
     umount -l "$ESP_MNT_POINT" 2>/dev/null || true
     umount -l "$ROOTFS_MNT_POINT" 2>/dev/null || true
     rmdir "$ESP_MNT_POINT" 2>/dev/null || true
@@ -32,7 +33,7 @@ trap cleanup EXIT
 
 # 1. 创建并挂载 ESP
 echo "INFO: Creating ESP image '$ESP_NAME'..."
-fallocate -l "${ESP_SIZE_MB}M" "$ESP_NAME"
+dd if=/dev/zero of="$ESP_NAME" bs=1M count="$ESP_SIZE_MB"
 mkfs.vfat -F 32 -n "ESPNABU" "$ESP_NAME"
 mount -o loop "$ESP_NAME" "$ESP_MNT_POINT"
 echo "INFO: ESP mounted at '$ESP_MNT_POINT'."
