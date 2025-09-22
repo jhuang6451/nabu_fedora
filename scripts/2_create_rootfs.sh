@@ -255,7 +255,7 @@ echo 'Creating /etc/fstab for automatic partition mounting...'
 cat <<EOF > "/etc/fstab"
 # /etc/fstab: static file system information.
 LABEL=fedora_root  /              ext4    defaults,x-systemd.device-timeout=0   1 1
-LABEL=ESPNABU          /boot/efi      vfat    umask=0077,shortname=winnt            0 0
+PARTLABEL=esp          /boot/efi      vfat    umask=0077,shortname=winnt,context=system_u:object_r:dosfs_t:s0            0 0
 EOF
 # --------------------------------------------------------------------------
 
