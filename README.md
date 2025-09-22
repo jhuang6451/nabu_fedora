@@ -5,13 +5,12 @@ English | [Simplified-Chinese(WIP)](./docs/README.zh.md)
 A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image for the Xiaomi Pad 5 (nabu) device (aarch64), along with tutorials and resources for installation. The build process produces a bootable root filesystem and an EFI System Partition (ESP) image.
 
 > [!IMPORTANT]
-> **This project is still in early stages.**
+> **This is a work-in-progress, there could be bugs.**
 
 > [!NOTE]
 > Initial username is `user` and the password is `fedora`.
 
 > [!NOTE]
-> The system is designed to work with [UEFI](https://github.com/Project-Aloha/mu_aloha_platforms), [DBKP](https://github.com/rodriguezst/nabu-dualboot-img) is also supported.As of [U-Boot](https://gitlab.com/sm8150-mainline/u-boot), I've yet to test it out.
 > The system is designed to work with [UEFI](https://github.com/Project-Aloha/mu_aloha_platforms), [DBKP](https://github.com/rodriguezst/nabu-dualboot-img) is also supported.As of [U-Boot](https://gitlab.com/sm8150-mainline/u-boot), I've yet to test it out.
 
 
