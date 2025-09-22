@@ -186,10 +186,28 @@ dnf install -y --releasever=$RELEASEVER \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False --exclude dracut-config-rescue \
+    --exclude gnome-boxes \
+    --exclude gnome-connections \
+    --exclude yelp \
+    --exclude gnome-calculator \
+    --exclude gnome-calendar \
+    --exclude gnome-characters \
+    --exclude gnome-classic-session \
+    --exclude gnome-contacts \
+    --exclude gnome-font-viewer \
+    --exclude gnome-logs \
+    --exclude gnome-maps \
+    --exclude gnome-user-docs \
+    --exclude gnome-weather \
+    --exclude simple-scan \
+    --exclude snapshot \
+    --exclude gnome-tour \
+    --exclude malcontent-control \
     @hardware-support \
     @standard \
     @base-graphical \
     NetworkManager-tui \
+    NetworkManager-wifi \
     systemd-boot-unsigned \
     kernel-sm8150 \
     xiaomi-nabu-firmware \
@@ -206,12 +224,24 @@ dnf install -y --releasever=$RELEASEVER \
     zram-generator \
     @gnome-desktop
 
+
+# Didn't remove from gnome-desktop:
+# totem
+# loupe
+# PackageKit-command-not-found
+# PackageKit
+# gnome-clocks
+# gnome-text-editor
+# baobab
+# evince
+# evince-djvu
+# gnome-system-monitor
+
 # I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
 # BUT IT JUST IS. OTHERWISE IT WILL COMPLAIN ABOUT MISSING grub.cfg.
 
 # Update: Seems that kernel-install has a hidden dependency on grubby (even though we are not using grub at all).
 # --------------------------------------------------------------------------
-
 
 
 
@@ -512,6 +542,13 @@ echo "Unmounting image..."
 umount "$MOUNT_DIR"
 rmdir "$MOUNT_DIR"
 trap - EXIT # 再次重置 trap
+
+# --- 关键修复：确保所有写操作都已同步到磁盘 ---
+# 在对镜像文件进行任何块级别的操作（如 e2fsck, resize2fs, truncate）之前，
+# 强制将内核缓冲区中的所有数据刷新到存储设备。
+# 这可以防止因 I/O 缓存导致的文件系统状态不一致，从而避免数据损坏。
+echo "Ensuring all data is written to the image file..."
+sync
 echo "Rootfs image created as $ROOTFS_NAME"
 
 
