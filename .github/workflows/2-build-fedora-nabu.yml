@@ -35,6 +35,9 @@ jobs:
   create_release:
     runs-on: ubuntu-24.04-arm
     needs: build_rootfs
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
+      options: --privileged
     permissions:
       contents: write
     env:
