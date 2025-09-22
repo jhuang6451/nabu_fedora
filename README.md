@@ -73,7 +73,7 @@ Steps:
         fastboot boot path/to/downloaded/twrp/image
         ```
 
-    * Wait until your tablet to boot into TWRP, then tap on the linux logo on the top right side of the screen.
+    * Wait until your tablet boots into TWRP, then tap on the linux logo on the top right side of the screen.
     * Tap on `Partitioning` -> Enter the linux partition size -> Tap on `yes` -> Wait for partitioning to be done.
 
 3. Transferring efi file to your tablet's esp partition:
@@ -104,12 +104,11 @@ Steps:
         fastboot flash linux path/to/fedora-42-nabu-rootfs.img
         ```
 
-        > [!NOTE]
-        > Make sure the rootfs is decompressed, it should end with `.img` rather than `,img.xz`.
-
     * Wait for the process to complete, then reboot your tablet, you should see the UEFI interface.
     * You can choose between boot options with volume bottom, and confirm with power bottom.
 
+> [!NOTE]
+> Make sure the rootfs is decompressed, it should end with `.img` rather than `,img.xz`.
 
 ## Chats & Support Groups
 
