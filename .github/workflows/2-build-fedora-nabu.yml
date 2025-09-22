@@ -54,13 +54,8 @@ jobs:
         with:
           path: artifacts
 
-      # 步骤 3: 解决 Git 'dubious ownership' 问题
-      # 在容器内运行时，Git 可能会因为工作目录的所有者与当前用户不匹配而报错。
-      # 此步骤将当前仓库目录标记为安全，允许 gh cli 正确执行。
-      - name: Mark repository as safe
-        run: git config --global --add safe.directory ${{ github.workspace }}
-
-      # 步骤 4: 运行发布脚本，此时脚本和工件都已就绪
+      # 步骤 3: 运行发布脚本，此时脚本和工件都已就绪
+      # The script now handles the git 'dubious ownership' issue internally.
       - name: Create Release and Upload Assets
         run: |
           cp ./scripts/4_create_release.sh ./4_create_release.sh

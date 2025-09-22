@@ -18,6 +18,14 @@ set -e
 set -u
 set -o pipefail
 
+# In containerized GitHub Actions environments, the workspace directory may not be
+# owned by the user running the script, causing git to report a "dubious ownership"
+# error. We mark the directory as safe to prevent this.
+if [ -n "${GITHUB_WORKSPACE}" ]; then
+    echo "INFO: Marking '${GITHUB_WORKSPACE}' as a safe git directory..."
+    git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+fi
+
 # --- 配置变量 ---
 echo "INFO: Reading configuration from environment variables..."
 ROOTFS_FILENAME="${ROOTFS_NAME:-fedora-42-nabu-rootfs.img}"
