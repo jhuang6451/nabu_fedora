@@ -126,10 +126,10 @@ uefi_stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
 # 使用 dracut 内部的 '${kernel}' 变量
 devicetree="/usr/lib/modules/${kernel}/dtb/qcom/sm8150-xiaomi-nabu.dtb"
 # uefi_cmdline is the specific option for UKIs.
-uefi_cmdline="root=LABEL=fedora_root rw quiet"
+uefi_cmdline="root=LABEL=fedora_root enforcing=0 rw quiet"
 # For some reason, This doesn't work. So I also add kernel_cmdline below.
 # kernel_cmdline is a more general option that also gets included.
-kernel_cmdline="root=LABEL=fedora_root rw quiet"
+kernel_cmdline="root=LABEL=fedora_root enforcing=0 rw quiet"
 EOF
 echo 'Dracut config created.'
 # --------------------------------------------------------------------------
@@ -274,7 +274,7 @@ systemctl enable qbootctl.service
 echo 'Creating /etc/fstab for automatic partition mounting...'
 cat <<EOF > "/etc/fstab"
 # /etc/fstab: static file system information.
-PARTLABEL=linux        /              ext4    defaults,x-systemd.device-timeout=0                                        1 1
+LABEL=fedora_root      /              ext4    defaults,x-systemd.device-timeout=0                                        1 1
 PARTLABEL=esp          /boot/efi      vfat    umask=0077,shortname=winnt,context=system_u:object_r:dosfs_t:s0            0 0
 EOF
 # --------------------------------------------------------------------------
