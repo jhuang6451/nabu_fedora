@@ -7,7 +7,7 @@
 #   1. 从环境变量获取 rootfs 文件名。
 #   2. 修正文件路径以匹配 actions/download-artifact@v4 的行为。
 #   3. 使用 xz 对 rootfs 镜像进行高效压缩。
-#   4. 从 rootfs 中提取 EFI 文件，并打包成 .zip 压缩包。
+#   4. 从 rootfs 中提取 EFI 文件, 安装 systemd-boot, 并打包成 .zip 压缩包。
 #   5. 创建一个带有动态信息的 GitHub Release 并上传所有资产。
 #
 # 作者: jhuang6451 (Refactored by Gemini)
@@ -86,7 +86,18 @@ rsync -a "$ROOTFS_EFI_CONTENT" "$EFI_FILES_DIR/"
 echo "INFO: Unmounting rootfs image..."
 umount "$ROOTFS_MNT_POINT"
 
-# 3. 创建 EFI zip 压缩包
+# 3. 安装 systemd-boot 到 EFI 目录
+echo "INFO: Installing systemd-boot into the EFI directory..."
+if ! bootctl --esp-path="$EFI_FILES_DIR" install; then
+    echo "ERROR: bootctl install failed." >&2
+    echo "--- Listing contents of EFI_FILES_DIR ('${EFI_FILES_DIR}') ---"
+    ls -R "${EFI_FILES_DIR}"
+    echo "--------------------------------------------------------"
+    exit 1
+fi
+echo "INFO: systemd-boot installed successfully."
+
+# 4. 创建 EFI zip 压缩包
 echo "INFO: Creating '${EFI_ZIP_NAME}'..."
 # We run the zip command in a subshell. This prevents 'cd' from affecting the
 # main script's working directory. The zip is created in the original PWD.
@@ -94,12 +105,12 @@ ORIGINAL_PWD=$PWD
 (cd "$EFI_FILES_DIR" && zip -r "$ORIGINAL_PWD/${EFI_ZIP_NAME}" .)
 echo "INFO: EFI zip package created successfully."
 
-# 4. 将 rootfs img 文件高效压缩为 .xz
+# 5. 将 rootfs img 文件高效压缩为 .xz
 echo "INFO: Compressing '${ROOTFS_PATH}' using xz with multi-threading..."
 xz -T0 -v "$ROOTFS_PATH"
 echo "INFO: Compression successful. Output: '${ROOTFS_COMPRESSED_PATH}'"
 
-# 5. 检查压缩文件和 zip 包是否存在
+# 6. 检查压缩文件和 zip 包是否存在
 if [ ! -f "$ROOTFS_COMPRESSED_PATH" ]; then
     echo "ERROR: Compressed rootfs file was not created!"
     exit 1
@@ -109,7 +120,7 @@ if [ ! -f "$EFI_ZIP_NAME" ]; then
     exit 1
 fi
 
-# 6. 准备创建 Release
+# 7. 准备创建 Release
 TAG="fedora-nabu-$(date +'%Y%m%d-%H%M')"
 RELEASE_TITLE="Fedora 42 for Mi Pad 5 (nabu) - ${TAG}"
 
@@ -132,7 +143,7 @@ This build is based on commit: [${GITHUB_SHA:0:7}](${COMMIT_URL})
 EOF
 )
 
-# 7. 创建 Release 并上传资产
+# 8. 创建 Release 并上传资产
 echo "INFO: Creating GitHub release '${TAG}'..."
 gh release create "$TAG" \
     --title "$RELEASE_TITLE" \
