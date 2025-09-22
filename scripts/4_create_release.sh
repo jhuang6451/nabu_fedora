@@ -1,105 +1,136 @@
 #!/bin/bash
 
 # ==============================================================================
-# 4_create_release.sh
+# 4_create_release.sh (v2.0)
 #
 # 功能:
-#   1. 从环境变量获取文件名，使其更具灵活性。
+#   1. 从环境变量获取 rootfs 文件名。
 #   2. 修正文件路径以匹配 actions/download-artifact@v4 的行为。
 #   3. 使用 xz 对 rootfs 镜像进行高效压缩。
-#   4. 创建一个带有动态信息的 GitHub Release 并上传资产。
+#   4. 从 rootfs 中提取 EFI 文件，并打包成 .zip 压缩包。
+#   5. 创建一个带有动态信息的 GitHub Release 并上传所有资产。
 #
-# 作者: jhuang6451
-# 版本: 1.0
+# 作者: jhuang6451 (Refactored by Gemini)
+# 版本: 2.0
 # ==============================================================================
 
 set -e
 set -u
 set -o pipefail
 
-# --- 配置变量 (从环境变量读取，如果未设置则使用默认值) ---
+# --- 配置变量 ---
 echo "INFO: Reading configuration from environment variables..."
 ROOTFS_FILENAME="${ROOTFS_NAME:-fedora-42-nabu-rootfs.img}"
-ESP_FILENAME="${ESP_NAME:-esp.img}"
+EFI_ZIP_NAME="efi-files.zip"
 
 # --- 路径定义 ---
-# 这是下载工件的根目录
 ARTIFACTS_DIR="artifacts"
-
-# --- 已修改：在与工件名称匹配的子目录中查找文件 ---
 # actions/download-artifact@v4 会为每个工件创建一个子目录。
+# Since we only have one artifact now, its path is predictable.
 ROOTFS_PATH="${ARTIFACTS_DIR}/rootfs-artifact/${ROOTFS_FILENAME}"
-ESP_PATH="${ARTIFACTS_DIR}/esp-artifact/${ESP_FILENAME}"
-
-# 输出的压缩文件名将是原始文件名加上 .xz 后缀
 ROOTFS_COMPRESSED_PATH="${ROOTFS_PATH}.xz"
+
+# --- 临时目录和挂载点 ---
+ROOTFS_MNT_POINT=$(mktemp -d)
+EFI_FILES_DIR=$(mktemp -d)
+
+# --- 清理函数 ---
+cleanup() {
+    echo "INFO: Performing cleanup..."
+    # sync
+    # Unmount quietly, ignoring errors if it's not mounted
+    umount "$ROOTFS_MNT_POINT" 2>/dev/null || true
+    # Remove temporary directories
+    rm -rf "$ROOTFS_MNT_POINT" "$EFI_FILES_DIR"
+    echo "INFO: Cleanup complete."
+}
+# Register the cleanup function to run on script exit (normal or error)
+trap cleanup EXIT
 
 # --- 脚本主逻辑 ---
 
-# 1. 检查原始文件是否存在
-echo "INFO: Verifying presence of artifact files..."
+# 1. 检查 rootfs 文件是否存在
+echo "INFO: Verifying presence of rootfs artifact..."
 if [ ! -f "$ROOTFS_PATH" ]; then
     echo "ERROR: Rootfs artifact not found at '$ROOTFS_PATH'!"
-    # 添加一个 ls 命令来帮助调试，这在 CI 环境中非常有用
     echo "--- Listing contents of ARTIFACTS_DIR ('${ARTIFACTS_DIR}') ---"
     ls -R "${ARTIFACTS_DIR}"
     echo "--------------------------------------------------------"
     exit 1
 fi
-if [ ! -f "$ESP_PATH" ]; then
-    echo "ERROR: ESP artifact not found at '$ESP_PATH'!"
+echo "INFO: Rootfs artifact found."
+
+# 2. 挂载 Rootfs 镜像并提取 EFI 文件
+echo "INFO: Mounting rootfs image to extract EFI files..."
+mount -o loop,ro "$ROOTFS_PATH" "$ROOTFS_MNT_POINT"
+
+ROOTFS_EFI_CONTENT="${ROOTFS_MNT_POINT}/boot/efi/"
+if [ ! -d "$ROOTFS_EFI_CONTENT" ] || [ -z "$(ls -A "$ROOTFS_EFI_CONTENT")" ]; then
+    echo "ERROR: The directory '$ROOTFS_EFI_CONTENT' in rootfs is empty or does not exist." >&2
+    echo "ERROR: This indicates a problem in the rootfs creation step." >&2
     exit 1
 fi
-echo "INFO: All artifact files found."
 
-# 2. 将 rootfs img 文件高效压缩为 .xz
+echo "INFO: Copying EFI content from rootfs..."
+rsync -a "$ROOTFS_EFI_CONTENT" "$EFI_FILES_DIR/"
+
+# 提取完成后立即卸载
+echo "INFO: Unmounting rootfs image..."
+umount "$ROOTFS_MNT_POINT"
+
+# 3. 创建 EFI zip 压缩包
+echo "INFO: Creating '${EFI_ZIP_NAME}'..."
+# We change into the directory to avoid including the parent path in the zip.
+cd "$EFI_FILES_DIR"
+zip -r "../${EFI_ZIP_NAME}" .
+cd .. # Go back to the original directory
+# The zip file is now at the root of the workspace, e.g., ./efi-files.zip
+echo "INFO: EFI zip package created successfully."
+
+# 4. 将 rootfs img 文件高效压缩为 .xz
 echo "INFO: Compressing '${ROOTFS_PATH}' using xz with multi-threading..."
 xz -T0 -v "$ROOTFS_PATH"
 echo "INFO: Compression successful. Output: '${ROOTFS_COMPRESSED_PATH}'"
 
-# 将 ESP img 文件也进行压缩
-echo "INFO: Compressing '${ESP_PATH}' using xz with multi-threading..."
-ESP_COMPRESSED_PATH="${ESP_PATH}.xz"
-xz -T0 -v "$ESP_PATH"
-echo "INFO: Compression successful. Output: '${ESP_COMPRESSED_PATH}'"
-
-# 3. 检查压缩文件是否存在
+# 5. 检查压缩文件和 zip 包是否存在
 if [ ! -f "$ROOTFS_COMPRESSED_PATH" ]; then
     echo "ERROR: Compressed rootfs file was not created!"
     exit 1
 fi
-# --- 新增检查 ---
-if [ ! -f "$ESP_COMPRESSED_PATH" ]; then
-    echo "ERROR: Compressed ESP file was not created!"
+if [ ! -f "$EFI_ZIP_NAME" ]; then
+    echo "ERROR: EFI zip file was not created!"
     exit 1
 fi
 
+# 6. 准备创建 Release
+TAG="fedora-nabu-$(date +'%Y%m%d-%H%M')"
+RELEASE_TITLE="Fedora 42 for Mi Pad 5 (nabu) - ${TAG}"
 
-# 4. 准备创建 Release
-TAG="test-fedora-nabu-$(date +'%Y%m%d-%H%M')"
-RELEASE_TITLE="[Test Release] Fedora 42 for Mi Pad 5 (nabu) - ${TAG}"
-
-# 生成更丰富的发布说明
+# 生成新的发布说明
 COMMIT_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your/repo}/commit/${GITHUB_SHA:-HEAD}"
-RELEASE_NOTES=$(cat <<-EOF
+RELEASE_NOTES=$(cat <<EOF
 Automated build of Fedora 42 for Xiaomi Pad 5 (nabu).
 
-**THIS IS A TEST BUILD - USE AT YOUR OWN RISK**
+**THIS IS AN EXPERIMENTAL BUILD - USE AT YOUR OWN RISK**
 
 **Assets:**
-- \`${ROOTFS_FILENAME}.xz\`: The compressed rootfs image. Decompress before use.
-- \`${ESP_FILENAME}.xz\`: The compressed ESP image. Decompress before use.
+- 
+${ROOTFS_FILENAME}.xz
+: The compressed rootfs image. Decompress before use.
+- 
+${EFI_ZIP_NAME}
+: Contains the bootloader and kernel (UKI). Unzip and copy the contents to your existing ESP partition.
 
 This build is based on commit: [${GITHUB_SHA:0:7}](${COMMIT_URL})
 EOF
 )
 
-# 5. 创建 Release 并上传资产
+# 7. 创建 Release 并上传资产
 echo "INFO: Creating GitHub release '${TAG}'..."
 gh release create "$TAG" \
     --title "$RELEASE_TITLE" \
     --notes "$RELEASE_NOTES" \
     "$ROOTFS_COMPRESSED_PATH" \
-    "$ESP_COMPRESSED_PATH"
+    "$EFI_ZIP_NAME"
 
 echo "SUCCESS: Release ${TAG} created successfully with assets."

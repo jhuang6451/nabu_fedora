@@ -9,10 +9,9 @@ permissions:
 env:
   CONTAINER_IMAGE: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
   ROOTFS_NAME: fedora-42-nabu-rootfs.img
-  ESP_NAME: esp.img
 
 jobs:
-  create_rootfs_and_esp:
+  build_rootfs:
     runs-on: ubuntu-24.04-arm
     container:
       image: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
@@ -27,32 +26,19 @@ jobs:
           chmod +x 2_create_rootfs.sh
           ./2_create_rootfs.sh
 
-      - name: Create ESP image
-        run: |
-          cp ./scripts/3_create_esp.sh ./3_create_esp.sh
-          chmod +x 3_create_esp.sh
-          ./3_create_esp.sh
-
       - name: Upload rootfs artifact
         uses: actions/upload-artifact@v4
         with:
           name: rootfs-artifact
           path: ./${{ env.ROOTFS_NAME }}
 
-      - name: Upload ESP image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: esp-artifact
-          path: ./${{ env.ESP_NAME }}
-
   create_release:
     runs-on: ubuntu-24.04-arm
-    needs: create_rootfs_and_esp
+    needs: build_rootfs
     permissions:
       contents: write
     env:
       ROOTFS_NAME: fedora-42-nabu-rootfs.img
-      ESP_NAME: esp.img
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       # 步骤 1: 先检出仓库，获取发布脚本
