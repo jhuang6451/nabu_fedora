@@ -40,15 +40,74 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 
 * [x] Fix UKI generation.
 * [x] Fix efi installation.
+* [x] Complete installation tutorial docs.
 * [ ] Write scripts for extended rootfs (Includes a standard graphical desktop environment and common utils).
-* [ ] Complete installation tutorial docs.
 * [ ] (Maybe) write install script.
 * [ ] Implement post-install scripts.
 * [ ] Kernel update test.
 
 ## Installation Tutorial
 
-* **WIP**
+Requirements:
+
+* A PC.
+* Internet connection.
+* Your **UNLOCKED** Xiaomi Pad 5 tablet.
+* USB Cable.
+
+Steps:
+
+1. Preparation:
+    * Make sure `android-tools` is installed on your PC, or download `platform-tools` from [Official Website](https://developer.android.com/tools/releases/platform-tools), then decompress and cd into it.
+    * Download and decompress both `efi-files.zip` and `fedora-42-nabu-rootfs.img.xz` from release.
+    * Download ArKT-7's modded TWRP (linux) for nabu from [here](https://github.com/ArKT-7/twrp_device_xiaomi_nabu/releases/tag/mod_linux).
+    * Download dualboot kernel pacher from [here](https://github.com/rodriguezst/nabu-dualboot-img/releases) (If you don't know what secureboot is, just download the NOSB version).
+
+2. Partitioning:
+    * Connect your tablet to your PC.
+    * Reboot your tablet into bootloader (press the power bottom and the volume down bottom together, until you see `fastboot` on screen).
+    * Boot into ArKT-7's modded TWRP.
+
+        ```Shell
+        fastboot boot path/to/downloaded/twrp/image
+        ```
+
+    * Wait until your tablet to boot into TWRP, then tap on the linux logo on the top right side of the screen.
+    * Tap on `Partitioning` -> Enter the linux partition size -> Tap on `yes` -> Wait for partitioning to be done.
+
+3. Transferring efi file to your tablet's esp partition:
+    * Make sure your tablet is still in TWRP, and your tablet is still connected to PC.
+    * On your PC, run:
+
+        ```Shell
+        adb shell 'umount /esp'
+        adb shell 'mount /dev/block/sda31 /esp'
+        adb push path/to/unzipped/efi-file/* /esp/
+        ```
+
+4. Install DBKP via adb sideload:
+    * On your tablet, go back to the home screem of TWRP.
+    * Tap on `Advanced` -> Tap on `ADB Sideload` -> Swipe the bar on the screen.
+    * On your PC, run:
+
+        ```Shell
+        adb sideload path/to/installer_bootmanager.zip
+        ```
+
+5. Install the rootfs:
+    * Reboot your tablet into bootloader again.
+    * On your PC, run:
+
+        ```Shell
+        fastboot flash linux path/to/fedora-42-nabu-rootfs.img
+        ```
+
+        > [!NOTE]
+        > Make sure the rootfs is decompressed, it should end with `.img` rather than `,img.xz`.
+
+    * Wait for the process to complete, then reboot your tablet, you should see the UEFI interface.
+    * You can choose between boot options with volume bottom, and confirm with power bottom.
+
 
 ## Chats & Support Groups
 
@@ -57,7 +116,7 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 ## Credits
 
 * [@ArKT-7](https://github.com/ArKT-7) for modded linux TWRP for nabu.
-* [@rodriguezst](https://github.com/rodriguezst) for UEFI kernel pacher.
+* [@rodriguezst](https://github.com/rodriguezst) for dualboot kernel pacher.
 * [Project-Aloha](https://github.com/Project-Aloha) for UEFI development.
 * [@gmankab](https://github.com/gmankab), [@Timofey](https://github.com/timoxa0), [@nik012003](https://github.com/nik012003) and all the other developers for building linux distros for nabu.
 * [@panpantepan](https://gitlab.com/panpanpanpan), [@map220v](https://github.com/map220v), [@nik012003](https://github.com/nik012003) and all the other developers who contributed to mainlining.
