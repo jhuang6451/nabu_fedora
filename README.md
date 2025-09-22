@@ -42,8 +42,8 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 * [x] Fix UKI generation.
 * [x] Fix efi installation.
 * [x] Complete installation tutorial docs.
-* [ ] Write scripts for extended rootfs (Includes a standard graphical desktop environment and common utils).
-* [ ] (Maybe) write install script.
+* [ ] Builds with other DEs.
+* [ ] (Maybe) Write install script.
 * [ ] Implement post-install scripts.
 * [ ] Kernel update test.
 
