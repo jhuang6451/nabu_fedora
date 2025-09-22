@@ -103,57 +103,148 @@ set -o pipefail
 
 
 # ==========================================================================
+# --- 创建 dracut 配置以支持 initramfs 和 UKI 生成 ---
+# ==========================================================================
+
+# --- 强制包含关键的存储驱动 ---
+echo 'Creating dracut config to force-include UFS storage drivers...'
+# 这是一个关键的健壮性措施，确保 initrd 总是包含启动所需的 UFS 驱动，
+# 避免 dracut 在 chroot 环境中因无法检测到目标硬件而遗漏它们。
+cat <<EOF > "/etc/dracut.conf.d/98-nabu-storage.conf"
+# Force-add essential drivers for Qualcomm UFS storage on Nabu.
+add_drivers+=" ufs_qcom ufshcd_pltfrm "
+EOF
+echo 'UFS driver config for dracut created.'
+
+# --- 动态 dracut 配置以支持自动 UKI 生成 ---
+echo 'Creating DYNAMIC dracut config for automated UKI generation...'
+mkdir -p "/etc/dracut.conf.d/"
+cat <<EOF > "/etc/dracut.conf.d/99-nabu-uki.conf"
+# This is a dynamically-aware configuration for dracut.
+uefi=yes
+uefi_stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
+# 使用 dracut 内部的 '${kernel}' 变量
+devicetree="/usr/lib/modules/${kernel}/dtb/qcom/sm8150-xiaomi-nabu.dtb"
+# uefi_cmdline is the specific option for UKIs.
+uefi_cmdline="root=LABEL=fedora_root rw quiet"
+# For some reason, This doesn't work. So I also add kernel_cmdline below.
+# kernel_cmdline is a more general option that also gets included.
+kernel_cmdline="root=LABEL=fedora_root rw quiet"
+EOF
+echo 'Dracut config created.'
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
+# --- 创建 kernel-install 配置 ---
+# ==========================================================================
+# --- 创建 install.conf ---
+echo 'Configuring kernel-install to generate UKIs...'
+mkdir -p "/etc/kernel/"
+cat <<EOF > "/etc/kernel/install.conf"
+# Tell kernel-install to use dracut as the UKI generator.
+uki_generator=dracut
+EOF
+
+# --- 禁用 rescue 内核安装插件 ---
+# 因为在 dnf 中排除了 dracut-config-rescue，所以救援内核不会被安装。
+# 这会导致 51-dracut-rescue.install 插件因找不到文件而失败。
+# 通过创建一个空的配置文件，告诉 kernel-install 跳过这个插件。
+echo 'Disabling rescue kernel generation to prevent build failure...'
+mkdir -p "/etc/kernel/install.d"
+touch "/etc/kernel/install.d/51-dracut-rescue.install"
+chmod +x "/etc/kernel/install.d/51-dracut-rescue.install"
+echo 'Rescue kernel plugin disabled.'
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
+# --- 临时禁用 kernel-install 工具 ---
+# ==========================================================================
+# 我们暂时重命名它，以防止 kernel-sm8150 RPM 包在安装过程中自动调用它。
+# 这确保了 UKI 的生成是在一个完全安装好的、稳定的 chroot 环境中进行，而不是在 dnf 事务中。
+echo "Temporarily disabling kernel-install to prevent execution during dnf transaction..."
+if [ -f "/usr/bin/kernel-install" ]; then
+    mv /usr/bin/kernel-install /usr/bin/kernel-install.bak
+fi
+
+#TODO: This may no longer be needed, but Im keeping it for now.
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
 # --- 安装必要的软件包 ---
 # ==========================================================================
+# --- 1. 安装基础软件包 ---
+# systemd-boot-unsigned会提供生成UKI所需的linuxaarch64.efi.stub。
 echo 'Installing additional packages...'
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False --exclude dracut-config-rescue \
-    @hardware-support \
-    @standard \
-    @base-graphical \
-    NetworkManager-tui \
-    git \
-    vim \
-    glibc-langpack-en \
-    systemd-resolved \
-    qbootctl \
-    tqftpserv \
-    pd-mapper \
-    rmtfs \
-    qrtr \
+    systemd-boot-unsigned \
     kernel-sm8150 \
     xiaomi-nabu-firmware \
-    xiaomi-nabu-audio \
-    systemd-boot-unsigned \
-    binutils \
-    zram-generator
+    glibc-langpack-en \
+    grubby \
+    binutils
+
+
+# I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
+# BUT IT JUST IS. OTHERWISE IT WILL COMPLAIN ABOUT MISSING grub.cfg.
+
+# Update: Seems that kernel-install has a hidden dependency on grubby (even though we are not using grub at all).
 # --------------------------------------------------------------------------
+#FIXME: 暂时不安装一些包，完整包猎豹备份：
+    # @hardware-support \
+    # @standard \
+    # @base-graphical \
+    # NetworkManager-tui \
+    # git \
+    # vim \
+    # glibc-langpack-en \
+    # systemd-resolved \
+    # qbootctl \
+    # tqftpserv \
+    # pd-mapper \
+    # rmtfs \
+    # qrtr \
+    # xiaomi-nabu-firmware \
+    # xiaomi-nabu-audio \
+    # systemd-boot-unsigned \
+    # binutils \
+    # zram-generator \
+    # grubby \
+    # grub2-efi-aa64 \
+    # grub2-efi-aa64-modules \
+    # kernel-sm8150
 
 
+#FIXME
+# # ==========================================================================
+# # --- 创建并启用 tqftpserv, rmtfs 和 qbootctl 服务 ---
+# # ==========================================================================
+# echo 'Creating qbootctl.service file...'
+# cat <<EOF > "/etc/systemd/system/qbootctl.service"
+# [Unit]
+# Description=Qualcomm boot slot ctrl mark boot successful
+# [Service]
+# ExecStart=/usr/bin/qbootctl -m
+# Type=oneshot
+# RemainAfterExit=yes
+# [Install]
+# WantedBy=multi-user.target
+# EOF
 
-# ==========================================================================
-# --- 创建并启用 tqftpserv, rmtfs 和 qbootctl 服务 ---
-# ==========================================================================
-echo 'Creating qbootctl.service file...'
-cat <<EOF > "/etc/systemd/system/qbootctl.service"
-[Unit]
-Description=Qualcomm boot slot ctrl mark boot successful
-[Service]
-ExecStart=/usr/bin/qbootctl -m
-Type=oneshot
-RemainAfterExit=yes
-[Install]
-WantedBy=multi-user.target
-EOF
-
-echo 'Enabling systemd services...'
-systemctl enable tqftpserv.service
-systemctl enable rmtfs.service
-systemctl enable qbootctl.service
-# --------------------------------------------------------------------------
+# echo 'Enabling systemd services...'
+# systemctl enable tqftpserv.service
+# systemctl enable rmtfs.service
+# systemctl enable qbootctl.service
+# # --------------------------------------------------------------------------
 
 
 
@@ -163,33 +254,18 @@ systemctl enable qbootctl.service
 echo 'Creating /etc/fstab for automatic partition mounting...'
 cat <<EOF > "/etc/fstab"
 # /etc/fstab: static file system information.
-LABEL=fedora_root  /              ext4    defaults,x-systemd.device-timeout=0   1 1
-LABEL=ESPNABU          /boot/efi      vfat    umask=0077,shortname=winnt            0 2
+PARTLABEL=linux        /              ext4    defaults,x-systemd.device-timeout=0                                        1 1
+PARTLABEL=esp          /boot/efi      vfat    umask=0077,shortname=winnt,context=system_u:object_r:dosfs_t:s0            0 0
 EOF
 # --------------------------------------------------------------------------
 
 
 
 # ==========================================================================
-# --- 创建 dracut 配置以支持 UKI 生成 ---
+# --- 提前创建ESP挂载点，作为UKI生成时的存放路径 ---
 # ==========================================================================
-echo 'Creating DYNAMIC dracut config for automated UKI generation...'
-mkdir -p "/etc/dracut.conf.d/"
-cat <<EOF > "/etc/dracut.conf.d/99-nabu-uki.conf"
-# This is a dynamically-aware configuration for dracut.
-uefi=yes
-uefi_stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
-
-# 使用 dracut 内部的 '${kernel}' 变量
-devicetree="/usr/lib/modules/${kernel}/dtb/qcom/sm8150-xiaomi-nabu.dtb"
-
-# --- Robust Kernel Command Line ---
-# uefi_cmdline is the specific option for UKIs.
-uefi_cmdline="root=LABEL=fedora_root rw quiet"
-# For some reason, This doesn't work. So I also add kernel_cmdline below.
-# kernel_cmdline is a more general option that also gets included.
-EOF
-echo 'Dracut config created.'
+echo 'Creating ESP mount point for UKI installation...'
+mkdir -p /boot/efi
 # --------------------------------------------------------------------------
 
 
@@ -197,16 +273,15 @@ echo 'Dracut config created.'
 # ==========================================================================
 # --- 使用 kernel-install 生成初始 UKI ---
 # ==========================================================================
+# --- 0. 恢复 kernel-install 工具 ---
+# 因为之前通过重命名禁用了它。
+echo "Re-enabling kernel-install..."
+if [ -f "/usr/bin/kernel-install.bak" ]; then
+    mv /usr/bin/kernel-install.bak /usr/bin/kernel-install
+fi
+#TODO: In theory, the kernel-sm8150 package should automatically run kernel-install and generate the UKI during installation.
+# But I'm not testing it for now. So I will manually run it once here to ensure the UKI is generated.
 
-# --- 0. (fix) 禁用 rescue 内核安装插件 ---
-# 因为在 dnf 中排除了 dracut-config-rescue，所以救援内核不会被安装。
-# 这会导致 51-dracut-rescue.install 插件因找不到文件而失败。
-# 通过创建一个空的配置文件，告诉 kernel-install 跳过这个插件。
-echo 'Disabling rescue kernel generation to prevent build failure...'
-mkdir -p "/etc/kernel/install.d"
-touch "/etc/kernel/install.d/51-dracut-rescue.install"
-chmod +x "/etc/kernel/install.d/51-dracut-rescue.install"
-echo 'Rescue kernel plugin disabled.'
 
 # --- 1. 检测内核版本 ---
 echo 'Detecting installed kernel version for initial UKI generation...'
@@ -217,14 +292,6 @@ if [ -z "$KERNEL_VERSION" ]; then
 fi
 echo "Detected kernel version for kernel-install: $KERNEL_VERSION"
 
-# --- 2. 配置 kernel-install ---
-echo 'Configuring kernel-install to generate UKIs...'
-mkdir -p "/etc/kernel/"
-cat <<EOF > "/etc/kernel/install.conf"
-# Tell kernel-install to use dracut as the UKI generator.
-uki_generator=dracut
-EOF
-
 # --- 3. 运行一次 kernel-install 来生成 UKI ---
 echo 'Running kernel-install to generate the initial UKI...'
 kernel-install add "$KERNEL_VERSION" "/boot/vmlinuz-$KERNEL_VERSION"
@@ -232,40 +299,18 @@ kernel-install add "$KERNEL_VERSION" "/boot/vmlinuz-$KERNEL_VERSION"
 
 
 
-# # ==================================================================================================
-# # --- temporary fix (because of dracut conf issue): 动态查找 UKI 并创建健壮的 system-boot 引导项 ---
-# # ==================================================================================================
-# echo 'Dynamically locating the generated UKI file...'
-# # 使用 find 查找由 kernel-install 生成的、包含特定内核版本的 UKI 文件
-# UKI_FILE_PATH=$(find "/boot/efi/EFI/Linux/" -name "linux-${KERNEL_VERSION}-*.efi" -print -quit)
-
-# if [ -z "$UKI_FILE_PATH" ]; then
-#     echo 'CRITICAL ERROR: Could not find the generated UKI file!' >&2
-#     exit 1
-# fi
-
-# # --- 从完整路径中提取文件名 ---
-# UKI_BASENAME=$(basename "$UKI_FILE_PATH")
-# echo "Found UKI: $UKI_BASENAME"
-
-# echo 'Creating a robust boot loader entry...'
-# ENTRY_DIR="/boot/efi/loader/entries"
-# # 我们使用一个固定的、可预测的文件名，以便 'loader.conf' 可以轻松地将其设为默认
-# ENTRY_FILE="${ENTRY_DIR}/fedora-nabu.conf" 
-
-# mkdir -p "$ENTRY_DIR"
-
-# cat <<EOF > "$ENTRY_FILE"
-# # Generated by Fedora-Nabu build script
-# title      Fedora Linux for Xiaomi Pad 5 (Nabu)
-# efi        /EFI/Linux/${UKI_BASENAME}
-# options    root=LABEL=fedora_root rw quiet
-# EOF
-
-# echo "Boot loader entry created at '$ENTRY_FILE'"
-# # ==================================================================================================
-# # --- temporary fix end ---
-# # ==================================================================================================
+# ==========================================================================
+# --- 验证 UKI 是否已生成 ---
+# ==========================================================================
+echo "Verifying UKI Generation..."
+if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
+    echo "SUCCESS: UKI file(s) found!"
+    ls -lR /boot/efi/
+else
+    echo "CRITICAL ERROR: No UKI file found!" >&2
+    exit 1
+fi
+# --------------------------------------------------------------------------
 
 
 
@@ -280,47 +325,32 @@ timeout 6
 console-mode max
 default fedora-*
 EOF
-#TODO : 这里的 default 需要动态设置为上面生成的那个 entry 文件
+#TODO : 这里的 default 配置有没有问题？
 # --------------------------------------------------------------------------
 
 
+#FIXME
+# # ==========================================================================
+# # --- 配置 zram 交换分区 ---
+# # ==========================================================================
+# echo 'Configuring zram swap for improved performance under memory pressure...'
+# # zram-generator-defaults is installed but we want to provide our own config
+# mkdir -p "/etc/systemd/"
+# cat <<EOF > "/etc/systemd/zram-generator.conf"
+# # This configuration enables a compressed RAM-based swap device (zram).
+# # It significantly improves system responsiveness and multitasking on
+# # devices with a fixed amount of RAM.
+# [zram0]
+# # Set the uncompressed swap size to be equal to the total physical RAM.
+# # This is a balanced value providing a large swap space without risking
+# # system thrashing under heavy load.
+# zram-size = ram
 
-# ==========================================================================
-# --- 新增部分：强制包含关键的存储驱动 ---
-# ==========================================================================
-echo 'Creating dracut config to force-include UFS storage drivers...'
-# 这是一个关键的健壮性措施，确保 initrd 总是包含启动所需的 UFS 驱动，
-# 避免 dracut 在 chroot 环境中因无法检测到目标硬件而遗漏它们。
-cat <<EOF > "/etc/dracut.conf.d/98-nabu-storage.conf"
-# Force-add essential drivers for Qualcomm UFS storage on Nabu.
-add_drivers+=" ufs_qcom ufshcd_platform "
-EOF
-echo 'UFS driver config for dracut created.'
-# ==========================================================================
-
-
-
-# ==========================================================================
-# --- 配置 zram 交换分区 ---
-# ==========================================================================
-echo 'Configuring zram swap for improved performance under memory pressure...'
-# zram-generator-defaults is installed but we want to provide our own config
-mkdir -p "/etc/systemd/"
-cat <<EOF > "/etc/systemd/zram-generator.conf"
-# This configuration enables a compressed RAM-based swap device (zram).
-# It significantly improves system responsiveness and multitasking on
-# devices with a fixed amount of RAM.
-[zram0]
-# Set the uncompressed swap size to be equal to the total physical RAM.
-# This is a balanced value providing a large swap space without risking
-# system thrashing under heavy load.
-zram-size = ram
-
-# Use zstd compression for the best balance of speed and compression ratio.
-compression-algorithm = zstd
-EOF
-echo 'Zram swap configured.'
-# ==========================================================================
+# # Use zstd compression for the best balance of speed and compression ratio.
+# compression-algorithm = zstd
+# EOF
+# echo 'Zram swap configured.'
+# # ==========================================================================
 
 
 
@@ -404,13 +434,13 @@ echo 'First-boot services created and enabled.'
 # --------------------------------------------------------------------------
 
 
-
-# ==========================================================================
-# --- 添加创建者签名到 /etc/os-release ---
-# ==========================================================================
-echo 'Adding creator signature to /etc/os-release...'
-echo 'BUILD_CREATOR="jhuang6451"' >> "/etc/os-release"
-# --------------------------------------------------------------------------
+#FIXME
+# # ==========================================================================
+# # --- 添加创建者签名到 /etc/os-release ---
+# # ==========================================================================
+# echo 'Adding creator signature to /etc/os-release...'
+# echo 'BUILD_CREATOR="jhuang6451"' >> "/etc/os-release"
+# # --------------------------------------------------------------------------
 
 
 
@@ -450,7 +480,7 @@ chmod 0440 "$SUDOERS_FILE"
 echo "Sudo access for group 'wheel' has been configured via $SUDOERS_FILE."
 # ===========================================================================================
 # --- 临时用户添加结束 ---
-#TODO: remove this temporary user after interactive post-install script is fixed
+#TODO: remove this temporary user after interactive post-install script is fixed.
 # ===========================================================================================
 
 
@@ -494,26 +524,51 @@ rmdir "$MOUNT_DIR"
 trap - EXIT # 再次重置 trap
 echo "Rootfs image created as $ROOTFS_NAME"
 
-# 5. 最小化并压缩 img 文件
-echo "Minimizing the image file..."
-e2fsck -f -y "$ROOTFS_NAME" || true # 忽略可能出现的“clean”错误
+
+
+# 5. fix:最小化并压缩 img 文件 (更安全的方法)
+echo "Minimizing the image file safely..."
+# 强制进行文件系统检查并修复
+e2fsck -f -y "$ROOTFS_NAME" || true
+
+# 将文件系统缩小到其内容的最小尺寸
 echo "Resizing filesystem to minimum size..."
 resize2fs -M "$ROOTFS_NAME"
 
-# 更稳健地获取块大小和块数量
-echo "Calculating new image size..."
-BLOCK_INFO=$(dumpe2fs -h "$ROOTFS_NAME" 2>/dev/null)
-BLOCK_SIZE=$(echo "$BLOCK_INFO" | grep 'Block size:' | awk '{print $3}')
-BLOCK_COUNT=$(echo "$BLOCK_INFO" | grep 'Block count:' | awk '{print $3}')
+# 再次运行 e2fsck 以确保缩小后的文件系统状态一致
+e2fsck -f -y "$ROOTFS_NAME" || true
+
+# --- 关键修复：计算新尺寸时增加安全边界 ---
+echo "Calculating new, safe image size..."
+# 从 dumpe2fs 获取文件系统所需的最小块数
+MIN_BLOCKS=$(dumpe2fs -h "$ROOTFS_NAME" 2>/dev/null | grep 'Block count:' | awk '{print $3}')
+# 获取文件系统的块大小 (以 KB 为单位)
+BLOCK_SIZE_KB=$(dumpe2fs -h "$ROOTFS_NAME" 2>/dev/null | grep 'Block size:' | awk '{print $3 / 1024}')
 
 # 检查是否成功获取了数值
-if ! [[ "$BLOCK_SIZE" =~ ^[0-9]+$ ]] || ! [[ "$BLOCK_COUNT" =~ ^[0-9]+$ ]]; then
+if ! [[ "$MIN_BLOCKS" =~ ^[0-9]+$ ]] || ! [[ "$BLOCK_SIZE_KB" =~ ^[0-9]+$ ]]; then
     echo "Error: Failed to retrieve block size or block count from image."
     exit 1
 fi
 
-# 计算新的大小并进行 truncate
-NEW_SIZE=$((BLOCK_SIZE * BLOCK_COUNT))
-echo "New calculated size is $NEW_SIZE bytes."
-truncate -s $NEW_SIZE "$ROOTFS_NAME"
-echo "Image minimized successfully."
+# 计算文件系统所需的最小尺寸 (以 KB 为单位)
+MIN_SIZE_KB=$((MIN_BLOCKS * BLOCK_SIZE_KB))
+
+# 增加一个 200MB 的安全余量 (204800 KB)
+# 这确保了 truncate 永远不会切掉文件系统的实际数据
+SAFETY_MARGIN_KB=204800
+NEW_SIZE_KB=$((MIN_SIZE_KB + SAFETY_MARGIN_KB))
+
+echo "Filesystem minimum size: ${MIN_SIZE_KB} KB"
+echo "Adding safety margin: ${SAFETY_MARGIN_KB} KB"
+echo "New safe image size: ${NEW_SIZE_KB} KB"
+
+# 使用 truncate 将镜像文件调整到新的、带有安全边界的尺寸
+truncate -s "${NEW_SIZE_KB}K" "$ROOTFS_NAME"
+echo "Image minimized successfully with safety margin."
+
+# 最后，让 resize2fs 将文件系统扩展回填满整个镜像文件
+# 这样镜像内部的文件系统就是完全健康的
+echo "Expanding filesystem to fill the new safe-sized image..."
+resize2fs "$ROOTFS_NAME"
+echo "Filesystem expanded. Image is now minimized."
