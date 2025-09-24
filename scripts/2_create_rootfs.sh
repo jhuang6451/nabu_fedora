@@ -126,10 +126,10 @@ uefi_stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
 # 使用 dracut 内部的 '${kernel}' 变量
 devicetree="/usr/lib/modules/${kernel}/dtb/qcom/sm8150-xiaomi-nabu.dtb"
 # uefi_cmdline is the specific option for UKIs.
-uefi_cmdline="root=LABEL=fedora_root rw quiet systemd.gpt_auto=no cryptomgr.notests"
+uefi_cmdline="root=PARTLABEL=linux rw quiet systemd.gpt_auto=no cryptomgr.notests"
 # For some reason, This doesn't work. So I also add kernel_cmdline below.
 # kernel_cmdline is a more general option that also gets included.
-kernel_cmdline="root=LABEL=fedora_root rw quiet systemd.gpt_auto=no cryptomgr.notests"
+kernel_cmdline="root=PARTLABEL=linux rw quiet systemd.gpt_auto=no cryptomgr.notests"
 EOF
 echo 'Dracut config created.'
 # --------------------------------------------------------------------------
