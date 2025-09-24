@@ -199,7 +199,7 @@ dnf install -y --releasever=$RELEASEVER \
 
 # Update: Seems that kernel-install has a hidden dependency on grubby (even though we are not using grub at all).
 # --------------------------------------------------------------------------
-#FIXME: 暂时不安装一些包，完整包猎豹备份：
+#FIXME: 暂时不安装一些包，完整包列表备份：
     # @hardware-support \
     # @standard \
     # @base-graphical \
