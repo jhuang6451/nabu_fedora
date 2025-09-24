@@ -126,10 +126,10 @@ uefi_stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
 # 使用 dracut 内部的 '${kernel}' 变量
 devicetree="/usr/lib/modules/${kernel}/dtb/qcom/sm8150-xiaomi-nabu.dtb"
 # uefi_cmdline is the specific option for UKIs.
-uefi_cmdline="root=LABEL=fedora_root rw quiet"
+uefi_cmdline="root=LABEL=fedora_root rw quiet systemd.gpt_auto=no cryptomgr.notests"
 # For some reason, This doesn't work. So I also add kernel_cmdline below.
 # kernel_cmdline is a more general option that also gets included.
-kernel_cmdline="root=LABEL=fedora_root rw quiet"
+kernel_cmdline="root=LABEL=fedora_root rw quiet systemd.gpt_auto=no cryptomgr.notests"
 EOF
 echo 'Dracut config created.'
 # --------------------------------------------------------------------------
@@ -186,12 +186,19 @@ dnf install -y --releasever=$RELEASEVER \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False --exclude dracut-config-rescue \
+    @hardware-support
     systemd-boot-unsigned \
     kernel-sm8150 \
     xiaomi-nabu-firmware \
     glibc-langpack-en \
     grubby \
-    binutils
+    binutils \
+    xiaomi-nabu-audio \
+    qrtr \
+    rmtfs \
+    pd-mapper \
+    tqftpserv \
+    qbootctl 
 
 
 # I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
@@ -254,8 +261,8 @@ dnf install -y --releasever=$RELEASEVER \
 echo 'Creating /etc/fstab for automatic partition mounting...'
 cat <<EOF > "/etc/fstab"
 # /etc/fstab: static file system information.
-LABEL=fedora_root  /              ext4    defaults,x-systemd.device-timeout=0   1 1
-PARTLABEL=esp       /boot/efi      vfat    umask=0077,shortname=winnt            0 0
+PARTLABEL=linux  /                  ext4   rw,errors=remount-ro,x-systemd.growfs  0 1
+PARTLABEL=esp    /boot/efi/         vfat   fmask=0022,dmask=0022                  0 1
 EOF
 # --------------------------------------------------------------------------
 
@@ -357,52 +364,58 @@ EOF
 # ==========================================================================
 # --- 集成首次启动服务 ---
 # ==========================================================================
-# --- 1. 创建并启用自动扩展文件系统服务 (非交互式) ---
-echo 'Creating first-boot resize service...'
 
-cat <<'EOF' > "/usr/local/bin/firstboot-resize.sh"
-#!/bin/bash
-set -e
-# 获取根分区的设备路径 (e.g., /dev/mmcblk0pXX)
-ROOT_DEV=$(findmnt -n -o SOURCE /)
-if [ -z "$ROOT_DEV" ]; then
-    echo "Could not find root device. Aborting resize." >&2
-    exit 1
-fi
-echo "Resizing filesystem on ${ROOT_DEV}..."
-# 扩展文件系统以填充整个分区
-resize2fs "${ROOT_DEV}"
-# 任务完成，禁用并移除此服务，确保下次启动不再运行
-systemctl disable firstboot-resize.service
-rm -f /etc/systemd/system/firstboot-resize.service
-rm -f /usr/local/bin/firstboot-resize.sh
-echo "Filesystem resized and service removed."
-EOF
+# # --- 1. 创建并启用自动扩展文件系统服务 (非交互式) ---
+# echo 'Creating first-boot resize service...'
 
-# 赋予脚本执行权限
-chmod +x "/usr/local/bin/firstboot-resize.sh"
+# cat <<'EOF' > "/usr/local/bin/firstboot-resize.sh"
+# #!/bin/bash
+# set -e
+# # 获取根分区的设备路径 (e.g., /dev/mmcblk0pXX)
+# ROOT_DEV=$(findmnt -n -o SOURCE /)
+# if [ -z "$ROOT_DEV" ]; then
+#     echo "Could not find root device. Aborting resize." >&2
+#     exit 1
+# fi
+# echo "Resizing filesystem on ${ROOT_DEV}..."
+# # 扩展文件系统以填充整个分区
+# resize2fs "${ROOT_DEV}"
+# # 任务完成，禁用并移除此服务，确保下次启动不再运行
+# systemctl disable firstboot-resize.service
+# rm -f /etc/systemd/system/firstboot-resize.service
+# rm -f /usr/local/bin/firstboot-resize.sh
+# echo "Filesystem resized and service removed."
+# EOF
 
-# 创建 systemd 服务单元
-cat <<EOF > "/etc/systemd/system/firstboot-resize.service"
-[Unit]
-Description=Resize root filesystem to fill partition on first boot
-# 确保在文件系统挂载后执行
-After=local-fs.target
+# # 赋予脚本执行权限
+# chmod +x "/usr/local/bin/firstboot-resize.sh"
 
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/firstboot-resize.sh
-# StandardOutput=journal+console
-RemainAfterExit=false
+# # 创建 systemd 服务单元
+# cat <<EOF > "/etc/systemd/system/firstboot-resize.service"
+# [Unit]
+# Description=Resize root filesystem to fill partition on first boot
+# # 确保在文件系统挂载后执行
+# After=local-fs.target
 
-[Install]
-# 链接到默认的目标，使其能够自启动
-WantedBy=default.target
-EOF
+# [Service]
+# Type=oneshot
+# ExecStart=/usr/local/bin/firstboot-resize.sh
+# # StandardOutput=journal+console
+# RemainAfterExit=false
 
-# 启用服务
-systemctl enable firstboot-resize.service
-echo 'First-boot resize service created and enabled.'
+# [Install]
+# # 链接到默认的目标，使其能够自启动
+# WantedBy=default.target
+# EOF
+
+# # 启用服务
+# systemctl enable firstboot-resize.service
+# echo 'First-boot resize service created and enabled.'
+# ---------------------------------------------------------------------------
+# THIS IS NOLONGER NEEDED BECAUSE WE ARE USING x-systemd.growfs IN FSTAB
+# ---------------------------------------------------------------------------
+#TODO: Test then delete this.
+
 
     
 # # 2. --- 创建并启用交互式配置服务 ---
