@@ -197,8 +197,7 @@ dnf install -y --releasever=$RELEASEVER \
     qrtr \
     rmtfs \
     pd-mapper \
-    tqftpserv \
-    qbootctl 
+    tqftpserv 
 
 
 # I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
