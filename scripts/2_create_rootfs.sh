@@ -243,7 +243,7 @@ systemctl enable qbootctl.service
 echo 'Creating /etc/fstab for automatic partition mounting...'
 cat <<EOF > "/etc/fstab"
 # /etc/fstab: static file system information.
-PARTLABEL=linux        /              ext4    defaults,x-systemd.device-timeout=0                                        1 1
+LABEL=fedora_root      /              ext4    defaults,x-systemd.device-timeout=0                                        1 1
 PARTLABEL=esp          /boot/efi      vfat    umask=0077,shortname=winnt,context=system_u:object_r:dosfs_t:s0            0 0
 EOF
 # --------------------------------------------------------------------------
@@ -501,7 +501,7 @@ trap - EXIT
 # 6. 将 rootfs 打包为 img 文件 (注意：这里不再需要 dnf clean all)
 echo "Creating rootfs image: $ROOTFS_NAME (size: $IMG_SIZE)..."
 fallocate -l "$IMG_SIZE" "$ROOTFS_NAME"
-mkfs.ext4 -L fedora_root -F -E lazy_itable_init=0,lazy_journal_init=0 "$ROOTFS_NAME" # 设置标签并禁用 lazy init
+mkfs.ext4 -L fedora_root -F "$ROOTFS_NAME"
 MOUNT_DIR=$(mktemp -d)
 trap 'rmdir -- "$MOUNT_DIR"' EXIT # 确保临时挂载目录在脚本退出时被清理
 mount -o loop "$ROOTFS_NAME" "$MOUNT_DIR"
@@ -514,6 +514,9 @@ trap - EXIT # 再次重置 trap
 echo "Rootfs image created as $ROOTFS_NAME"
 
 
+echo "Ensuring all data is written to the image file..."
+sync
+echo "Rootfs image created as $ROOTFS_NAME"
 
 # 5. fix:最小化并压缩 img 文件 (更安全的方法)
 echo "Minimizing the image file safely..."
