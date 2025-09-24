@@ -231,26 +231,26 @@ dnf install -y --releasever=$RELEASEVER \
 
 
 #FIXME
-# # ==========================================================================
-# # --- 创建并启用 tqftpserv, rmtfs 和 qbootctl 服务 ---
-# # ==========================================================================
-# echo 'Creating qbootctl.service file...'
-# cat <<EOF > "/etc/systemd/system/qbootctl.service"
-# [Unit]
-# Description=Qualcomm boot slot ctrl mark boot successful
-# [Service]
-# ExecStart=/usr/bin/qbootctl -m
-# Type=oneshot
-# RemainAfterExit=yes
-# [Install]
-# WantedBy=multi-user.target
-# EOF
+# ==========================================================================
+# --- 创建并启用 tqftpserv, rmtfs 和 qbootctl 服务 ---
+# ==========================================================================
+echo 'Creating qbootctl.service file...'
+cat <<EOF > "/etc/systemd/system/qbootctl.service"
+[Unit]
+Description=Qualcomm boot slot ctrl mark boot successful
+[Service]
+ExecStart=/usr/bin/qbootctl -m
+Type=oneshot
+RemainAfterExit=yes
+[Install]
+WantedBy=multi-user.target
+EOF
 
-# echo 'Enabling systemd services...'
-# systemctl enable tqftpserv.service
-# systemctl enable rmtfs.service
-# systemctl enable qbootctl.service
-# # --------------------------------------------------------------------------
+echo 'Enabling systemd services...'
+systemctl enable tqftpserv.service
+systemctl enable rmtfs.service
+systemctl enable qbootctl.service
+# --------------------------------------------------------------------------
 
 
 
