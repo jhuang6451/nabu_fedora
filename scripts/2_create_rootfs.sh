@@ -186,31 +186,39 @@ dnf install -y --releasever=$RELEASEVER \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False --exclude dracut-config-rescue \
-    @hardware-support \
-    @standard \
-    @base-graphical \
-    NetworkManager-tui \
     systemd-boot-unsigned \
     kernel-sm8150 \
     xiaomi-nabu-firmware \
     xiaomi-nabu-audio \
     glibc-langpack-en \
     grubby \
-    binutils \
-    systemd-resolved \
-    qbootctl \
-    tqftpserv \
-    pd-mapper \
-    rmtfs \
-    qrtr \
-    zram-generator
+    binutils
+
 
 # I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
 # BUT IT JUST IS. OTHERWISE IT WILL COMPLAIN ABOUT MISSING grub.cfg.
 
 # Update: Seems that kernel-install has a hidden dependency on grubby (even though we are not using grub at all).
 # --------------------------------------------------------------------------
-
+# Package list backup:
+    # @hardware-support \
+    # @standard \
+    # @base-graphical \
+    # NetworkManager-tui \
+    # systemd-boot-unsigned \
+    # kernel-sm8150 \
+    # xiaomi-nabu-firmware \
+    # xiaomi-nabu-audio \
+    # glibc-langpack-en \
+    # grubby \
+    # binutils \
+    # systemd-resolved \
+    # qbootctl \
+    # tqftpserv \
+    # pd-mapper \
+    # rmtfs \
+    # qrtr \
+    # zram-generator
 
 
 
