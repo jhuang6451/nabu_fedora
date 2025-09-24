@@ -186,7 +186,7 @@ dnf install -y --releasever=$RELEASEVER \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False --exclude dracut-config-rescue \
-    @hardware-support
+    @hardware-support \
     systemd-boot-unsigned \
     kernel-sm8150 \
     xiaomi-nabu-firmware \
