@@ -255,7 +255,7 @@ echo 'Creating /etc/fstab for automatic partition mounting...'
 cat <<EOF > "/etc/fstab"
 # /etc/fstab: static file system information.
 LABEL=fedora_root  /              ext4    defaults,x-systemd.device-timeout=0   1 1
-LABEL=ESPNABU          /boot/efi      vfat    umask=0077,shortname=winnt            0 0
+PARTLABEL=esp       /boot/efi      vfat    umask=0077,shortname=winnt            0 0
 EOF
 # --------------------------------------------------------------------------
 
@@ -508,6 +508,8 @@ echo "Chroot operations completed. Unmounting filesystems..."
 umount_chroot_fs
 # 重置 trap，因为我们已经手动卸载了
 trap - EXIT
+
+sync
 
 # 6. 将 rootfs 打包为 img 文件 (注意：这里不再需要 dnf clean all)
 echo "Creating rootfs image: $ROOTFS_NAME (size: $IMG_SIZE)..."
