@@ -103,36 +103,29 @@ set -o pipefail
 
 
 # ==========================================================================
-# --- 创建 dracut 配置以支持 initramfs 和 UKI 生成 ---
+# --- 创建 dracut 和 ukify 配置以分别支持 initramfs 和 UKI 生成 ---
 # ==========================================================================
 
-# --- 强制包含关键的存储驱动 ---
-echo 'Creating dracut config to force-include UFS storage drivers...'
-# 这是一个关键的健壮性措施，确保 initrd 总是包含启动所需的 UFS 驱动，
-# 避免 dracut 在 chroot 环境中因无法检测到目标硬件而遗漏它们。
-cat <<EOF > "/etc/dracut.conf.d/98-nabu-storage.conf"
-# Force-add essential drivers for Qualcomm UFS storage on Nabu.
-#add_drivers+=" ufs_qcom ufshcd_pltfrm qcom-scm arm_smmu arm_smmu_v3 icc-rpmh "
+# --- 创建 dracut 配置文件以生成 initramfs ---
+echo 'Creating dracut config for initramfs...'
+cat <<EOF > "/etc/dracut.conf.d/99-nabu-generic.conf"
+# Ensure dracut builds a generic image, not one tied to the build host hardware.
+hostonly="no"
+# 强制包含关键的存储驱动
 force_drivers+=" ufs_qcom ufshcd_pltfrm "
+#add_drivers+=" ufs_qcom ufshcd_pltfrm qcom-scm arm_smmu arm_smmu_v3 icc-rpmh "
 EOF
-echo 'UFS driver config for dracut created.'
+echo 'Generic dracut config created.'
 
-# --- 动态 dracut 配置以支持自动 UKI 生成 ---
-echo 'Creating DYNAMIC dracut config for automated UKI generation...'
-mkdir -p "/etc/dracut.conf.d/"
-cat <<'EOF' > "/etc/dracut.conf.d/99-nabu-uki.conf"
-# This is a dynamically-aware configuration for dracut.
-uefi=yes
-uefi_stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
-# 使用 dracut 内部的 '${kernel}' 变量
-devicetree="/usr/lib/modules/${kernel}/dtb/qcom/sm8150-xiaomi-nabu.dtb"
-# uefi_cmdline is the specific option for UKIs.
-uefi_cmdline="root=PARTLABEL=linux rw quiet systemd.gpt_auto=no cryptomgr.notests"
-# For some reason, This doesn't work. So I also add kernel_cmdline below.
-# kernel_cmdline is a more general option that also gets included.
-kernel_cmdline="root=PARTLABEL=linux rw quiet systemd.gpt_auto=no cryptomgr.notests"
+# --- 创建 systemd-ukify 配置文件 ---
+echo 'Creating systemd-ukify config file...'
+mkdir -p "/etc/systemd/"
+cat <<'EOF' > "/etc/systemd/ukify.conf"
+[UKI]
+Cmdline=root=PARTLABEL=linux rw quiet systemd.gpt_auto=no cryptomgr.notests
+Stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
 EOF
-echo 'Dracut config created.'
+echo 'systemd-ukify config file created.'
 # --------------------------------------------------------------------------
 
 
@@ -160,7 +153,7 @@ dnf install -y --releasever=$RELEASEVER \
     --setopt=install_weak_deps=False --exclude dracut-config-rescue \
     @hardware-support \
     systemd-boot-unsigned \
-    kernel-sm8150 \
+    systemd-ukify \
     xiaomi-nabu-firmware \
     glibc-langpack-en \
     grubby \
@@ -171,8 +164,8 @@ dnf install -y --releasever=$RELEASEVER \
     pd-mapper \
     tqftpserv \
     qbootctl \
-    zram-generator
-
+    zram-generator \
+    kernel-sm8150
 
 # ==========================================================================
 # --- 验证 UKI 是否已生成 ---
