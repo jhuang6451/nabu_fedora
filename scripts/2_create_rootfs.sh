@@ -138,40 +138,10 @@ echo 'Dracut config created.'
 
 
 # ==========================================================================
-# --- 创建 kernel-install 配置 ---
+# --- 提前创建ESP挂载点，作为UKI生成时的存放路径 ---
 # ==========================================================================
-# --- 创建 install.conf ---
-echo 'Configuring kernel-install to generate UKIs...'
-mkdir -p "/etc/kernel/"
-cat <<EOF > "/etc/kernel/install.conf"
-# Tell kernel-install to use dracut as the UKI generator.
-uki_generator=dracut
-EOF
-
-# --- 禁用 rescue 内核安装插件 ---
-# 因为在 dnf 中排除了 dracut-config-rescue，所以救援内核不会被安装。
-# 这会导致 51-dracut-rescue.install 插件因找不到文件而失败。
-# 通过创建一个空的配置文件，告诉 kernel-install 跳过这个插件。
-echo 'Disabling rescue kernel generation to prevent build failure...'
-mkdir -p "/etc/kernel/install.d"
-touch "/etc/kernel/install.d/51-dracut-rescue.install"
-chmod +x "/etc/kernel/install.d/51-dracut-rescue.install"
-echo 'Rescue kernel plugin disabled.'
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 临时禁用 kernel-install 工具 ---
-# ==========================================================================
-# 我们暂时重命名它，以防止 kernel-sm8150 RPM 包在安装过程中自动调用它。
-# 这确保了 UKI 的生成是在一个完全安装好的、稳定的 chroot 环境中进行，而不是在 dnf 事务中。
-echo "Temporarily disabling kernel-install to prevent execution during dnf transaction..."
-if [ -f "/usr/bin/kernel-install" ]; then
-    mv /usr/bin/kernel-install /usr/bin/kernel-install.bak
-fi
-
-#TODO: This may no longer be needed, but Im keeping it for now.
+echo 'Creating ESP mount point for UKI installation...'
+mkdir -p /boot/efi
 # --------------------------------------------------------------------------
 
 
@@ -181,6 +151,7 @@ fi
 # ==========================================================================
 # --- 1. 安装基础软件包 ---
 # systemd-boot-unsigned会提供生成UKI所需的linuxaarch64.efi.stub。
+# 此处安装 kernel-sm8150 时，其 %posttrans 脚本会自动运行并调用 dracut 生成 UKI。
 echo 'Installing additional packages...'
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
@@ -203,8 +174,23 @@ dnf install -y --releasever=$RELEASEVER \
     zram-generator
 
 
+# ==========================================================================
+# --- 验证 UKI 是否已生成 ---
+# ==========================================================================
+echo "Verifying UKI Generation after dnf install..."
+if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
+    echo "SUCCESS: UKI file(s) found!"
+    ls -lR /boot/efi/
+else
+    echo "CRITICAL ERROR: No UKI file found after RPM installation!" >&2
+    echo "This means the %posttrans script in the kernel RPM failed to generate the UKI." >&2
+    exit 1
+fi
+# --------------------------------------------------------------------------
+
+
 # I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
-# BUT IT JUST IS. OTHERWISE IT WILL COMPLAIN ABOUT MISSING grub.cfg.
+
 
 # Update: Seems that kernel-install has a hidden dependency on grubby (even though we are not using grub at all).
 # --------------------------------------------------------------------------
@@ -266,59 +252,6 @@ cat <<EOF > "/etc/fstab"
 PARTLABEL=linux  /                  ext4   rw,errors=remount-ro,x-systemd.growfs  0 1
 PARTLABEL=esp    /boot/efi/         vfat   fmask=0022,dmask=0022                  0 1
 EOF
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 提前创建ESP挂载点，作为UKI生成时的存放路径 ---
-# ==========================================================================
-echo 'Creating ESP mount point for UKI installation...'
-mkdir -p /boot/efi
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 使用 kernel-install 生成初始 UKI ---
-# ==========================================================================
-# --- 0. 恢复 kernel-install 工具 ---
-# 因为之前通过重命名禁用了它。
-echo "Re-enabling kernel-install..."
-if [ -f "/usr/bin/kernel-install.bak" ]; then
-    mv /usr/bin/kernel-install.bak /usr/bin/kernel-install
-fi
-#TODO: In theory, the kernel-sm8150 package should automatically run kernel-install and generate the UKI during installation.
-# But I'm not testing it for now. So I will manually run it once here to ensure the UKI is generated.
-
-
-# --- 1. 检测内核版本 ---
-echo 'Detecting installed kernel version for initial UKI generation...'
-KERNEL_VERSION=$(ls /lib/modules | sort -rV | head -n1)
-if [ -z "$KERNEL_VERSION" ]; then
-    echo 'ERROR: No kernel version found inside chroot!' >&2
-    exit 1
-fi
-echo "Detected kernel version for kernel-install: $KERNEL_VERSION"
-
-# --- 3. 运行一次 kernel-install 来生成 UKI ---
-echo 'Running kernel-install to generate the initial UKI...'
-kernel-install add "$KERNEL_VERSION" "/boot/vmlinuz-$KERNEL_VERSION"
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 验证 UKI 是否已生成 ---
-# ==========================================================================
-echo "Verifying UKI Generation..."
-if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
-    echo "SUCCESS: UKI file(s) found!"
-    ls -lR /boot/efi/
-else
-    echo "CRITICAL ERROR: No UKI file found!" >&2
-    exit 1
-fi
 # --------------------------------------------------------------------------
 
 
@@ -531,7 +464,7 @@ echo "Creating rootfs image: $ROOTFS_NAME (size: $IMG_SIZE)..."
 fallocate -l "$IMG_SIZE" "$ROOTFS_NAME"
 mkfs.ext4 -L fedora_root -F "$ROOTFS_NAME" # 设置标签
 MOUNT_DIR=$(mktemp -d)
-trap 'rmdir -- "$MOUNT_DIR"' EXIT # 确保临时挂载目录在脚本退出时被清理
+trap 'umount "$MOUNT_DIR" &>/dev/null; rmdir -- "$MOUNT_DIR"' EXIT # 确保临时挂载目录在脚本退出时被清理
 mount -o loop "$ROOTFS_NAME" "$MOUNT_DIR"
 echo "Copying rootfs contents to image..."
 rsync -aHAXx --info=progress2 "$ROOTFS_DIR/" "$MOUNT_DIR/"
