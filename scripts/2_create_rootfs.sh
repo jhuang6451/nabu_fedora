@@ -112,7 +112,8 @@ echo 'Creating dracut config to force-include UFS storage drivers...'
 # 避免 dracut 在 chroot 环境中因无法检测到目标硬件而遗漏它们。
 cat <<EOF > "/etc/dracut.conf.d/98-nabu-storage.conf"
 # Force-add essential drivers for Qualcomm UFS storage on Nabu.
-add_drivers+=" ufs_qcom ufshcd_pltfrm qcom-scm arm_smmu arm_smmu_v3 icc-rpmh "
+#add_drivers+=" ufs_qcom ufshcd_pltfrm qcom-scm arm_smmu arm_smmu_v3 icc-rpmh "
+force_drivers+=" ufs_qcom ufshcd_pltfrm "
 EOF
 echo 'UFS driver config for dracut created.'
 
