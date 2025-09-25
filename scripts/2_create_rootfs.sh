@@ -120,7 +120,7 @@ echo 'UFS driver config for dracut created.'
 # --- 动态 dracut 配置以支持自动 UKI 生成 ---
 echo 'Creating DYNAMIC dracut config for automated UKI generation...'
 mkdir -p "/etc/dracut.conf.d/"
-cat <<EOF > "/etc/dracut.conf.d/99-nabu-uki.conf"
+cat <<'EOF' > "/etc/dracut.conf.d/99-nabu-uki.conf"
 # This is a dynamically-aware configuration for dracut.
 uefi=yes
 uefi_stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
