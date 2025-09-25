@@ -197,7 +197,9 @@ dnf install -y --releasever=$RELEASEVER \
     qrtr \
     rmtfs \
     pd-mapper \
-    tqftpserv 
+    tqftpserv \
+    qbootctl \
+    zram-generator
 
 
 # I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
@@ -230,7 +232,7 @@ dnf install -y --releasever=$RELEASEVER \
     # kernel-sm8150
 
 
-#FIXME
+
 # ==========================================================================
 # --- 创建并启用 tqftpserv, rmtfs 和 qbootctl 服务 ---
 # ==========================================================================
@@ -335,28 +337,28 @@ EOF
 # --------------------------------------------------------------------------
 
 
-#FIXME
-# # ==========================================================================
-# # --- 配置 zram 交换分区 ---
-# # ==========================================================================
-# echo 'Configuring zram swap for improved performance under memory pressure...'
-# # zram-generator-defaults is installed but we want to provide our own config
-# mkdir -p "/etc/systemd/"
-# cat <<EOF > "/etc/systemd/zram-generator.conf"
-# # This configuration enables a compressed RAM-based swap device (zram).
-# # It significantly improves system responsiveness and multitasking on
-# # devices with a fixed amount of RAM.
-# [zram0]
-# # Set the uncompressed swap size to be equal to the total physical RAM.
-# # This is a balanced value providing a large swap space without risking
-# # system thrashing under heavy load.
-# zram-size = ram
 
-# # Use zstd compression for the best balance of speed and compression ratio.
-# compression-algorithm = zstd
-# EOF
-# echo 'Zram swap configured.'
-# # ==========================================================================
+# ==========================================================================
+# --- 配置 zram 交换分区 ---
+# ==========================================================================
+echo 'Configuring zram swap for improved performance under memory pressure...'
+# zram-generator-defaults is installed but we want to provide our own config
+mkdir -p "/etc/systemd/"
+cat <<EOF > "/etc/systemd/zram-generator.conf"
+# This configuration enables a compressed RAM-based swap device (zram).
+# It significantly improves system responsiveness and multitasking on
+# devices with a fixed amount of RAM.
+[zram0]
+# Set the uncompressed swap size to be equal to the total physical RAM.
+# This is a balanced value providing a large swap space without risking
+# system thrashing under heavy load.
+zram-size = ram
+
+# Use zstd compression for the best balance of speed and compression ratio.
+compression-algorithm = zstd
+EOF
+echo 'Zram swap configured.'
+# ==========================================================================
 
 
 
@@ -446,13 +448,13 @@ echo 'First-boot services created and enabled.'
 # --------------------------------------------------------------------------
 
 
-#FIXME
-# # ==========================================================================
-# # --- 添加创建者签名到 /etc/os-release ---
-# # ==========================================================================
-# echo 'Adding creator signature to /etc/os-release...'
-# echo 'BUILD_CREATOR="jhuang6451"' >> "/etc/os-release"
-# # --------------------------------------------------------------------------
+
+# ==========================================================================
+# --- 添加创建者签名到 /etc/os-release ---
+# ==========================================================================
+echo 'Adding creator signature to /etc/os-release...'
+echo 'BUILD_CREATOR="jhuang6451"' >> "/etc/os-release"
+# --------------------------------------------------------------------------
 
 
 
