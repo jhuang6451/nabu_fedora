@@ -144,24 +144,13 @@ mkdir -p /boot/efi
 # ==========================================================================
 # --- 1. 安装基础软件包 ---
 # systemd-boot-unsigned会提供生成UKI所需的linuxaarch64.efi.stub。
-# 此处安装 kernel-sm8150 时，其 %posttrans 脚本会自动运行并调用 dracut 生成 UKI。
-echo 'Installing additional packages...'
+echo 'Installing basic packages...'
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
-    --setopt=install_weak_deps=False --exclude dracut-config-rescue \
-    --exclude gnome-boxes \
-    --exclude gnome-connections \
-    --exclude yelp \
-    --exclude gnome-classic-session \
-    --exclude gnome-maps \
-    --exclude gnome-user-docs \
-    --exclude gnome-weather \
-    --exclude simple-scan \
-    --exclude snapshot \
-    --exclude gnome-tour \
-    --exclude malcontent-control \
+    --setopt=install_weak_deps=False \
+    --exclude dracut-config-rescue \
     @hardware-support \
     systemd-boot-unsigned \
     systemd-ukify \
@@ -177,6 +166,37 @@ dnf install -y --releasever=$RELEASEVER \
     qbootctl \
     zram-generator \
     NetworkManager-wifi \
+    NetworkManager-tui
+
+# Seems that kernel-install has a hidden dependency on grubby.
+
+# Now, install the kernel. This will trigger UKI generation.
+echo "Installing kernel package to trigger UKI generation..."
+dnf install -y --releasever=$RELEASEVER \
+    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    kernel-sm8150
+
+# Install optional packages
+echo "Installing optional packages..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    --exclude gnome-boxes \
+    --exclude gnome-connections \
+    --exclude yelp \
+    --exclude gnome-classic-session \
+    --exclude gnome-maps \
+    --exclude gnome-user-docs \
+    --exclude gnome-weather \
+    --exclude simple-scan \
+    --exclude snapshot \
+    --exclude gnome-tour \
+    --exclude malcontent-control \
+    @standard \
+    @base-graphical \
     @gnome-desktop \
     firefox
 
@@ -198,13 +218,6 @@ dnf install -y --releasever=$RELEASEVER \
 # gnome-font-viewer
 # gnome-characters
 
-# Now, install the kernel. This will trigger UKI generation.
-echo "Installing kernel package to trigger UKI generation..."
-dnf install -y --releasever=$RELEASEVER \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
-    --nogpgcheck \
-    --setopt=install_weak_deps=False \
-    kernel-sm8150
 
 # ==========================================================================
 # --- 验证 UKI 是否已生成 ---
@@ -219,36 +232,6 @@ else
     exit 1
 fi
 # --------------------------------------------------------------------------
-
-
-# I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
-
-
-# Update: Seems that kernel-install has a hidden dependency on grubby (even though we are not using grub at all).
-# --------------------------------------------------------------------------
-#FIXME: 暂时不安装一些包，完整包列表备份：
-    # @hardware-support \
-    # @standard \
-    # @base-graphical \
-    # NetworkManager-tui \
-    # git \
-    # vim \
-    # glibc-langpack-en \
-    # systemd-resolved \
-    # qbootctl \
-    # tqftpserv \
-    # pd-mapper \
-    # rmtfs \
-    # qrtr \
-    # xiaomi-nabu-firmware \
-    # xiaomi-nabu-audio \
-    # systemd-boot-unsigned \
-    # binutils \
-    # zram-generator \
-    # grubby \
-    # grub2-efi-aa64 \
-    # grub2-efi-aa64-modules \
-    # kernel-sm8150
 
 
 
