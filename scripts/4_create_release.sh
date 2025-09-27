@@ -133,9 +133,8 @@ if [ ! -f "$EFI_ZIP_NAME" ]; then
 fi
 
 # 7. 准备创建 Release
-TAG="release-$(date +'%Y%m%d-%H%M')"
-#RELEASE_TITLE="Fedora 42 for Mi Pad 5 (nabu) - ${TAG}"
-RELEASE_TITLE="Fedora 42 for Nabu - $(date +'%Y%m%d-%H%M')"
+TAG="release-1.0-$(date +'%Y%m%d-%H%M')"
+RELEASE_TITLE="Fedora 42 for Nabu 1.0 - $(date +'%Y%m%d-%H%M')"
 # 生成新的发布说明
 COMMIT_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your/repo}/commit/${GITHUB_SHA:-HEAD}"
 RELEASE_NOTES=$(cat <<EOF
