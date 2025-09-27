@@ -123,7 +123,7 @@ mkdir -p "/etc/systemd/"
 cat <<'EOF' > "/etc/systemd/ukify.conf"
 [UKI]
 Cmdline=root=PARTLABEL=linux rw quiet systemd.gpt_auto=no cryptomgr.notests
-Stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
+Stub=/usr/lib/systemd/boot/efi/linuxaa64.efi.stub
 EOF
 echo 'systemd-ukify config file created.'
 # --------------------------------------------------------------------------
