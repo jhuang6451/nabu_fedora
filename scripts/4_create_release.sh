@@ -132,7 +132,7 @@ fi
 
 # 7. 准备创建 Release
 TAG="release-1.0-$(date +'%Y%m%d-%H%M')"
-RELEASE_TITLE="Fedora 42 for Nabu 1.0 - $(date +'%Y%m%d-%H%M')"
+RELEASE_TITLE="Fedora 42 for Nabu 1.0-$(date +'%Y%m%d-%H%M')"
 # 生成新的发布说明
 COMMIT_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your/repo}/commit/${GITHUB_SHA:-HEAD}"
 RELEASE_NOTES=$(cat <<EOF
