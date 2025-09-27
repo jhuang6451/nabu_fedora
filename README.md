@@ -2,10 +2,10 @@
 
 English | [Simplified-Chinese(WIP)](./docs/README.zh.md)
 
-A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image for the Xiaomi Pad 5 (nabu) device (aarch64), along with tutorials and resources for installation. The build process produces a bootable root filesystem and an EFI System Partition (ESP) image.
+A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image for the Xiaomi Pad 5 (nabu) device (aarch64), along with tutorials and resources for installation. The build process produces a bootable root filesystem and efi files.
 
 > [!IMPORTANT]
-> **This is a work-in-progress, wait for formal release.**
+> **This is a work-in-progress.**
 
 > [!NOTE]
 > Initial username is `user` and the password is `fedora`.
@@ -40,9 +40,8 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 
 * [x] Fix UKI generation.
 * [x] Fix efi installation.
-* [ ] Complete installation tutorial docs.
+* [x] Complete installation tutorial docs.
 * [ ] Builds with other DEs.
-* [ ] (Maybe) Write install script.
 * [ ] Implement post-install scripts.
 * [ ] Kernel update test.
 
@@ -64,10 +63,6 @@ Steps:
     * Download dualboot kernel pacher from [here](https://github.com/rodriguezst/nabu-dualboot-img/releases) (If you don't know what secureboot is, just download the NOSB version).
 
 2. Partitioning:
-
-> [!IMPORTANT]
-> Partitioning with this TWRP's linux partitioning feature somehow causes file system to break after flashing rootfs. Right now manual partitioning is the only way. This tutorial is to be updated.
-
     * Connect your tablet to your PC.
     * Reboot your tablet into bootloader (press the power bottom and the volume down bottom together, until you see `fastboot` on screen).
     * Boot into ArKT-7's modded TWRP.
@@ -76,13 +71,10 @@ Steps:
         fastboot boot path/to/downloaded/twrp/image
         ```
 
-    * Manual partitioning with `GNU Parted`:
+    * Wait until your tablet to boot into TWRP, then tap on the linux logo on the top right side of the screen.
+    * Tap on `Partitioning` -> Enter the linux partition size -> Tap on `yes` -> Wait for partitioning to be done.
 
-       ```
-       adb shell parted /dev/block/sda
-       ```
-
-4. Transferring efi file to your tablet's esp partition:
+3. Transferring efi file to your tablet's esp partition:
     * Make sure your tablet is still in TWRP, and your tablet is still connected to PC.
     * On your PC, run:
 
@@ -93,7 +85,7 @@ Steps:
         adb shell 'umount /esp'
         ```
 
-5. Install DBKP via adb sideload:
+4. Install DBKP via adb sideload:
     * On your tablet, go back to the home screem of TWRP.
     * Tap on `Advanced` -> Tap on `ADB Sideload` -> Swipe the bar on the screen.
     * On your PC, run:
@@ -102,7 +94,7 @@ Steps:
         adb sideload path/to/installer_bootmanager.zip
         ```
 
-6. Install the rootfs:
+5. Install the rootfs:
     * Reboot your tablet into bootloader again.
     * On your PC, run:
 
