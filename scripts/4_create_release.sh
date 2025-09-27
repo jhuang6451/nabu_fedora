@@ -135,7 +135,7 @@ fi
 # 7. 准备创建 Release
 TAG="release-$(date +'%Y%m%d-%H%M')"
 #RELEASE_TITLE="Fedora 42 for Mi Pad 5 (nabu) - ${TAG}"
-RELEASE_TITLE="Release Build - $(date +'%Y%m%d-%H%M')"
+RELEASE_TITLE="Fedora 42 for Nabu - Test - $(date +'%Y%m%d-%H%M')"
 # 生成新的发布说明
 COMMIT_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your/repo}/commit/${GITHUB_SHA:-HEAD}"
 RELEASE_NOTES=$(cat <<EOF
@@ -155,7 +155,9 @@ echo "INFO: Creating GitHub release '${TAG}'..."
 gh release create "$TAG" \
     --title "$RELEASE_TITLE" \
     --notes "$RELEASE_NOTES" \
+    --prerelease \
     "$ROOTFS_COMPRESSED_PATH" \
     "$EFI_ZIP_NAME"
+# test发布设置为prerelease
 
 echo "SUCCESS: Release ${TAG} created successfully with assets."

@@ -103,74 +103,38 @@ set -o pipefail
 
 
 # ==========================================================================
-# --- 创建 dracut 配置以支持 initramfs 和 UKI 生成 ---
+# --- 创建 dracut 和 ukify 配置以分别支持 initramfs 和 UKI 生成 ---
 # ==========================================================================
 
-# --- 强制包含关键的存储驱动 ---
-echo 'Creating dracut config to force-include UFS storage drivers...'
-# 这是一个关键的健壮性措施，确保 initrd 总是包含启动所需的 UFS 驱动，
-# 避免 dracut 在 chroot 环境中因无法检测到目标硬件而遗漏它们。
-cat <<EOF > "/etc/dracut.conf.d/98-nabu-storage.conf"
-# Force-add essential drivers for Qualcomm UFS storage on Nabu.
-add_drivers+=" ufs_qcom ufshcd_pltfrm "
+# --- 创建 dracut 配置文件以生成 initramfs ---
+echo 'Creating dracut config for initramfs...'
+cat <<EOF > "/etc/dracut.conf.d/99-nabu-generic.conf"
+# Ensure dracut builds a generic image, not one tied to the build host hardware.
+hostonly="no"
+# 强制包含关键的存储驱动
+force_drivers+=" ufs_qcom ufshcd_pltfrm "
+#add_drivers+=" ufs_qcom ufshcd_pltfrm qcom-scm arm_smmu arm_smmu_v3 icc-rpmh "
 EOF
-echo 'UFS driver config for dracut created.'
+echo 'Generic dracut config created.'
 
-# --- 动态 dracut 配置以支持自动 UKI 生成 ---
-echo 'Creating DYNAMIC dracut config for automated UKI generation...'
-mkdir -p "/etc/dracut.conf.d/"
-cat <<EOF > "/etc/dracut.conf.d/99-nabu-uki.conf"
-# This is a dynamically-aware configuration for dracut.
-uefi=yes
-uefi_stub=/usr/lib/systemd/boot/efi/linuxaarch64.efi.stub
-# 使用 dracut 内部的 '${kernel}' 变量
-devicetree="/usr/lib/modules/${kernel}/dtb/qcom/sm8150-xiaomi-nabu.dtb"
-# uefi_cmdline is the specific option for UKIs.
-uefi_cmdline="root=LABEL=fedora_root enforcing=0 rw quiet"
-# For some reason, This doesn't work. So I also add kernel_cmdline below.
-# kernel_cmdline is a more general option that also gets included.
-kernel_cmdline="root=LABEL=fedora_root enforcing=0 rw quiet"
+# --- 创建 systemd-ukify 配置文件 ---
+echo 'Creating systemd-ukify config file...'
+mkdir -p "/etc/systemd/"
+cat <<'EOF' > "/etc/systemd/ukify.conf"
+[UKI]
+Cmdline=root=PARTLABEL=linux rw quiet systemd.gpt_auto=no cryptomgr.notests
+Stub=/usr/lib/systemd/boot/efi/linuxaa64.efi.stub
 EOF
-echo 'Dracut config created.'
+echo 'systemd-ukify config file created.'
 # --------------------------------------------------------------------------
 
 
 
 # ==========================================================================
-# --- 创建 kernel-install 配置 ---
+# --- 提前创建ESP挂载点，作为UKI生成时的存放路径 ---
 # ==========================================================================
-# --- 创建 install.conf ---
-echo 'Configuring kernel-install to generate UKIs...'
-mkdir -p "/etc/kernel/"
-cat <<EOF > "/etc/kernel/install.conf"
-# Tell kernel-install to use dracut as the UKI generator.
-uki_generator=dracut
-EOF
-
-# --- 禁用 rescue 内核安装插件 ---
-# 因为在 dnf 中排除了 dracut-config-rescue，所以救援内核不会被安装。
-# 这会导致 51-dracut-rescue.install 插件因找不到文件而失败。
-# 通过创建一个空的配置文件，告诉 kernel-install 跳过这个插件。
-echo 'Disabling rescue kernel generation to prevent build failure...'
-mkdir -p "/etc/kernel/install.d"
-touch "/etc/kernel/install.d/51-dracut-rescue.install"
-chmod +x "/etc/kernel/install.d/51-dracut-rescue.install"
-echo 'Rescue kernel plugin disabled.'
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 临时禁用 kernel-install 工具 ---
-# ==========================================================================
-# 我们暂时重命名它，以防止 kernel-sm8150 RPM 包在安装过程中自动调用它。
-# 这确保了 UKI 的生成是在一个完全安装好的、稳定的 chroot 环境中进行，而不是在 dnf 事务中。
-echo "Temporarily disabling kernel-install to prevent execution during dnf transaction..."
-if [ -f "/usr/bin/kernel-install" ]; then
-    mv /usr/bin/kernel-install /usr/bin/kernel-install.bak
-fi
-
-#TODO: This may no longer be needed, but Im keeping it for now.
+echo 'Creating ESP mount point for UKI installation...'
+mkdir -p /boot/efi
 # --------------------------------------------------------------------------
 
 
@@ -178,24 +142,52 @@ fi
 # ==========================================================================
 # --- 安装必要的软件包 ---
 # ==========================================================================
-# --- 1. 安装基础软件包 ---
+# Install basic packages.
 # systemd-boot-unsigned会提供生成UKI所需的linuxaarch64.efi.stub。
-echo 'Installing additional packages...'
+echo 'Installing basic packages...'
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
-    --setopt=install_weak_deps=False --exclude dracut-config-rescue \
+    --setopt=install_weak_deps=False \
+    --exclude dracut-config-rescue \
+    @hardware-support \
+    systemd-boot-unsigned \
+    systemd-ukify \
+    xiaomi-nabu-firmware \
+    xiaomi-nabu-audio \
+    glibc-langpack-en \
+    binutils \
+    xiaomi-nabu-audio \
+    qrtr \
+    rmtfs \
+    pd-mapper \
+    tqftpserv \
+    qbootctl \
+    zram-generator \
+    NetworkManager-wifi \
+    NetworkManager-tui
+
+# Seems that kernel-install has a hidden dependency on grubby, but I don't use it now.
+
+# Now, install the kernel. This will trigger UKI generation.
+echo "Installing kernel package to trigger UKI generation..."
+dnf install -y --releasever=$RELEASEVER \
+    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    kernel-sm8150
+
+# Install optional packages
+echo "Installing optional packages..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
     --exclude gnome-boxes \
     --exclude gnome-connections \
     --exclude yelp \
-    --exclude gnome-calculator \
-    --exclude gnome-calendar \
-    --exclude gnome-characters \
     --exclude gnome-classic-session \
-    --exclude gnome-contacts \
-    --exclude gnome-font-viewer \
-    --exclude gnome-logs \
     --exclude gnome-maps \
     --exclude gnome-user-docs \
     --exclude gnome-weather \
@@ -203,27 +195,10 @@ dnf install -y --releasever=$RELEASEVER \
     --exclude snapshot \
     --exclude gnome-tour \
     --exclude malcontent-control \
-    @hardware-support \
     @standard \
     @base-graphical \
-    NetworkManager-tui \
-    NetworkManager-wifi \
-    systemd-boot-unsigned \
-    kernel-sm8150 \
-    xiaomi-nabu-firmware \
-    xiaomi-nabu-audio \
-    glibc-langpack-en \
-    grubby \
-    binutils \
-    systemd-resolved \
-    qbootctl \
-    tqftpserv \
-    pd-mapper \
-    rmtfs \
-    qrtr \
-    zram-generator \
-    @gnome-desktop
-
+    @gnome-desktop \
+    firefox
 
 # Didn't remove from gnome-desktop:
 # totem
@@ -236,11 +211,26 @@ dnf install -y --releasever=$RELEASEVER \
 # evince
 # evince-djvu
 # gnome-system-monitor
+# gnome-calculator
+# gnome-calendar
+# gnome-contacts
+# gnome-logs
+# gnome-font-viewer
+# gnome-characters
 
-# I Have ABSOLUTELY 0 IDEA why GRUB is needed for dracut To create UKI (???)
-# BUT IT JUST IS. OTHERWISE IT WILL COMPLAIN ABOUT MISSING grub.cfg.
 
-# Update: Seems that kernel-install has a hidden dependency on grubby (even though we are not using grub at all).
+# ==========================================================================
+# --- 验证 UKI 是否已生成 ---
+# ==========================================================================
+echo "Verifying UKI Generation after dnf install..."
+if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
+    echo "SUCCESS: UKI file(s) found!"
+    ls -lR /boot/efi/
+else
+    echo "CRITICAL ERROR: No UKI file found after RPM installation!" >&2
+    echo "This means the %posttrans script in the kernel RPM failed to generate the UKI." >&2
+    exit 1
+fi
 # --------------------------------------------------------------------------
 
 
@@ -274,62 +264,9 @@ systemctl enable qbootctl.service
 echo 'Creating /etc/fstab for automatic partition mounting...'
 cat <<EOF > "/etc/fstab"
 # /etc/fstab: static file system information.
-LABEL=fedora_root      /              ext4    defaults,x-systemd.device-timeout=0                                        1 1
-PARTLABEL=esp          /boot/efi      vfat    umask=0077,shortname=winnt,context=system_u:object_r:dosfs_t:s0            0 0
+PARTLABEL=linux  /                  ext4   rw,errors=remount-ro,x-systemd.growfs  0 1
+PARTLABEL=esp    /boot/efi/         vfat   fmask=0022,dmask=0022                  0 1
 EOF
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 提前创建ESP挂载点，作为UKI生成时的存放路径 ---
-# ==========================================================================
-echo 'Creating ESP mount point for UKI installation...'
-mkdir -p /boot/efi
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 使用 kernel-install 生成初始 UKI ---
-# ==========================================================================
-# --- 0. 恢复 kernel-install 工具 ---
-# 因为之前通过重命名禁用了它。
-echo "Re-enabling kernel-install..."
-if [ -f "/usr/bin/kernel-install.bak" ]; then
-    mv /usr/bin/kernel-install.bak /usr/bin/kernel-install
-fi
-#TODO: In theory, the kernel-sm8150 package should automatically run kernel-install and generate the UKI during installation.
-# But I'm not testing it for now. So I will manually run it once here to ensure the UKI is generated.
-
-
-# --- 1. 检测内核版本 ---
-echo 'Detecting installed kernel version for initial UKI generation...'
-KERNEL_VERSION=$(ls /lib/modules | sort -rV | head -n1)
-if [ -z "$KERNEL_VERSION" ]; then
-    echo 'ERROR: No kernel version found inside chroot!' >&2
-    exit 1
-fi
-echo "Detected kernel version for kernel-install: $KERNEL_VERSION"
-
-# --- 3. 运行一次 kernel-install 来生成 UKI ---
-echo 'Running kernel-install to generate the initial UKI...'
-kernel-install add "$KERNEL_VERSION" "/boot/vmlinuz-$KERNEL_VERSION"
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 验证 UKI 是否已生成 ---
-# ==========================================================================
-echo "Verifying UKI Generation..."
-if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
-    echo "SUCCESS: UKI file(s) found!"
-    ls -lR /boot/efi/
-else
-    echo "CRITICAL ERROR: No UKI file found!" >&2
-    exit 1
-fi
 # --------------------------------------------------------------------------
 
 
@@ -377,52 +314,58 @@ echo 'Zram swap configured.'
 # ==========================================================================
 # --- 集成首次启动服务 ---
 # ==========================================================================
-# --- 1. 创建并启用自动扩展文件系统服务 (非交互式) ---
-echo 'Creating first-boot resize service...'
 
-cat <<'EOF' > "/usr/local/bin/firstboot-resize.sh"
-#!/bin/bash
-set -e
-# 获取根分区的设备路径 (e.g., /dev/mmcblk0pXX)
-ROOT_DEV=$(findmnt -n -o SOURCE /)
-if [ -z "$ROOT_DEV" ]; then
-    echo "Could not find root device. Aborting resize." >&2
-    exit 1
-fi
-echo "Resizing filesystem on ${ROOT_DEV}..."
-# 扩展文件系统以填充整个分区
-resize2fs "${ROOT_DEV}"
-# 任务完成，禁用并移除此服务，确保下次启动不再运行
-systemctl disable firstboot-resize.service
-rm -f /etc/systemd/system/firstboot-resize.service
-rm -f /usr/local/bin/firstboot-resize.sh
-echo "Filesystem resized and service removed."
-EOF
+# # --- 1. 创建并启用自动扩展文件系统服务 (非交互式) ---
+# echo 'Creating first-boot resize service...'
 
-# 赋予脚本执行权限
-chmod +x "/usr/local/bin/firstboot-resize.sh"
+# cat <<'EOF' > "/usr/local/bin/firstboot-resize.sh"
+# #!/bin/bash
+# set -e
+# # 获取根分区的设备路径 (e.g., /dev/mmcblk0pXX)
+# ROOT_DEV=$(findmnt -n -o SOURCE /)
+# if [ -z "$ROOT_DEV" ]; then
+#     echo "Could not find root device. Aborting resize." >&2
+#     exit 1
+# fi
+# echo "Resizing filesystem on ${ROOT_DEV}..."
+# # 扩展文件系统以填充整个分区
+# resize2fs "${ROOT_DEV}"
+# # 任务完成，禁用并移除此服务，确保下次启动不再运行
+# systemctl disable firstboot-resize.service
+# rm -f /etc/systemd/system/firstboot-resize.service
+# rm -f /usr/local/bin/firstboot-resize.sh
+# echo "Filesystem resized and service removed."
+# EOF
 
-# 创建 systemd 服务单元
-cat <<EOF > "/etc/systemd/system/firstboot-resize.service"
-[Unit]
-Description=Resize root filesystem to fill partition on first boot
-# 确保在文件系统挂载后执行
-After=local-fs.target
+# # 赋予脚本执行权限
+# chmod +x "/usr/local/bin/firstboot-resize.sh"
 
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/firstboot-resize.sh
-# StandardOutput=journal+console
-RemainAfterExit=false
+# # 创建 systemd 服务单元
+# cat <<EOF > "/etc/systemd/system/firstboot-resize.service"
+# [Unit]
+# Description=Resize root filesystem to fill partition on first boot
+# # 确保在文件系统挂载后执行
+# After=local-fs.target
 
-[Install]
-# 链接到默认的目标，使其能够自启动
-WantedBy=default.target
-EOF
+# [Service]
+# Type=oneshot
+# ExecStart=/usr/local/bin/firstboot-resize.sh
+# # StandardOutput=journal+console
+# RemainAfterExit=false
 
-# 启用服务
-systemctl enable firstboot-resize.service
-echo 'First-boot resize service created and enabled.'
+# [Install]
+# # 链接到默认的目标，使其能够自启动
+# WantedBy=default.target
+# EOF
+
+# # 启用服务
+# systemctl enable firstboot-resize.service
+# echo 'First-boot resize service created and enabled.'
+# ---------------------------------------------------------------------------
+# THIS IS NOLONGER NEEDED BECAUSE WE ARE USING x-systemd.growfs IN FSTAB
+# ---------------------------------------------------------------------------
+#TODO: Test then delete this.
+
 
     
 # # 2. --- 创建并启用交互式配置服务 ---
@@ -459,7 +402,7 @@ echo 'First-boot services created and enabled.'
 # --- 添加创建者签名到 /etc/os-release ---
 # ==========================================================================
 echo 'Adding creator signature to /etc/os-release...'
-echo 'BUILD_CREATOR="jhuang6451(https://github.com/jhuang6451)"' >> "/etc/os-release"
+echo 'BUILD_CREATOR="jhuang6451"' >> "/etc/os-release"
 # --------------------------------------------------------------------------
 
 
@@ -529,12 +472,14 @@ umount_chroot_fs
 # 重置 trap，因为我们已经手动卸载了
 trap - EXIT
 
+sync
+
 # 6. 将 rootfs 打包为 img 文件 (注意：这里不再需要 dnf clean all)
 echo "Creating rootfs image: $ROOTFS_NAME (size: $IMG_SIZE)..."
 fallocate -l "$IMG_SIZE" "$ROOTFS_NAME"
-mkfs.ext4 -L fedora_root -F -E lazy_itable_init=0,lazy_journal_init=0 "$ROOTFS_NAME" # 设置标签并禁用 lazy init
+mkfs.ext4 -L fedora_root -F "$ROOTFS_NAME"
 MOUNT_DIR=$(mktemp -d)
-trap 'rmdir -- "$MOUNT_DIR"' EXIT # 确保临时挂载目录在脚本退出时被清理
+trap 'umount "$MOUNT_DIR" &>/dev/null; rmdir -- "$MOUNT_DIR"' EXIT # 确保临时挂载目录在脚本退出时被清理
 mount -o loop "$ROOTFS_NAME" "$MOUNT_DIR"
 echo "Copying rootfs contents to image..."
 rsync -aHAXx --info=progress2 "$ROOTFS_DIR/" "$MOUNT_DIR/"
@@ -552,6 +497,9 @@ sync
 echo "Rootfs image created as $ROOTFS_NAME"
 
 
+echo "Ensuring all data is written to the image file..."
+sync
+echo "Rootfs image created as $ROOTFS_NAME"
 
 # 5. fix:最小化并压缩 img 文件 (更安全的方法)
 echo "Minimizing the image file safely..."
