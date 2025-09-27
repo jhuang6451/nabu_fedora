@@ -488,14 +488,6 @@ umount "$MOUNT_DIR"
 rmdir "$MOUNT_DIR"
 trap - EXIT # 再次重置 trap
 
-# --- 关键修复：确保所有写操作都已同步到磁盘 ---
-# 在对镜像文件进行任何块级别的操作（如 e2fsck, resize2fs, truncate）之前，
-# 强制将内核缓冲区中的所有数据刷新到存储设备。
-# 这可以防止因 I/O 缓存导致的文件系统状态不一致，从而避免数据损坏。
-echo "Ensuring all data is written to the image file..."
-sync
-echo "Rootfs image created as $ROOTFS_NAME"
-
 
 echo "Ensuring all data is written to the image file..."
 sync
