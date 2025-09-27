@@ -1,17 +1,15 @@
 #!/bin/bash
 
 # ==============================================================================
-# 4_create_release.sh (v2.0)
+# 4_create_release.sh
 #
-# 功能:
-#   1. 从环境变量获取 rootfs 文件名。
-#   2. 修正文件路径以匹配 actions/download-artifact@v4 的行为。
-#   3. 使用 xz 对 rootfs 镜像进行高效压缩。
-#   4. 从 rootfs 中提取 EFI 文件, 安装 systemd-boot, 并打包成 .zip 压缩包。
-#   5. 创建一个带有动态信息的 GitHub Release 并上传所有资产。
+# 功能: 
+#   1. 从 rootfs 中提取 EFI 文件, 安装 systemd-boot, 并打包成zip 压缩包。
+#   2. 使用 xz 对 rootfs 镜像进行高效压缩。
+#   3. 创建一个带有动态信息的 GitHub Release 并上传所有资产。
 #
-# 作者: jhuang6451 (Refactored by Gemini)
-# 版本: 2.0
+# 作者: jhuang6451
+# 版本: 1.0
 # ==============================================================================
 
 set -e
