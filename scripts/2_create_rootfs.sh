@@ -164,7 +164,14 @@ dnf install -y --releasever=$RELEASEVER \
     pd-mapper \
     tqftpserv \
     qbootctl \
-    zram-generator \
+    zram-generator
+
+# Now, install the kernel. This will trigger UKI generation.
+echo "Installing kernel package to trigger UKI generation..."
+dnf install -y --releasever=$RELEASEVER \
+    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
     kernel-sm8150
 
 # ==========================================================================
