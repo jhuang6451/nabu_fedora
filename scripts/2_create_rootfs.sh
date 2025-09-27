@@ -142,7 +142,7 @@ mkdir -p /boot/efi
 # ==========================================================================
 # --- 安装必要的软件包 ---
 # ==========================================================================
-# --- 1. 安装基础软件包 ---
+# Install basic packages.
 # systemd-boot-unsigned会提供生成UKI所需的linuxaarch64.efi.stub。
 echo 'Installing basic packages...'
 dnf install -y --releasever=$RELEASEVER \
@@ -157,7 +157,6 @@ dnf install -y --releasever=$RELEASEVER \
     xiaomi-nabu-firmware \
     xiaomi-nabu-audio \
     glibc-langpack-en \
-    grubby \
     binutils \
     xiaomi-nabu-audio \
     qrtr \
@@ -169,7 +168,7 @@ dnf install -y --releasever=$RELEASEVER \
     NetworkManager-wifi \
     NetworkManager-tui
 
-# Seems that kernel-install has a hidden dependency on grubby.
+# Seems that kernel-install has a hidden dependency on grubby, but I don't use it now.
 
 # Now, install the kernel. This will trigger UKI generation.
 echo "Installing kernel package to trigger UKI generation..."
