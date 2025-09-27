@@ -151,6 +151,17 @@ dnf install -y --releasever=$RELEASEVER \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False --exclude dracut-config-rescue \
+    --exclude gnome-boxes \
+    --exclude gnome-connections \
+    --exclude yelp \
+    --exclude gnome-classic-session \
+    --exclude gnome-maps \
+    --exclude gnome-user-docs \
+    --exclude gnome-weather \
+    --exclude simple-scan \
+    --exclude snapshot \
+    --exclude gnome-tour \
+    --exclude malcontent-control \
     @hardware-support \
     systemd-boot-unsigned \
     systemd-ukify \
@@ -164,7 +175,28 @@ dnf install -y --releasever=$RELEASEVER \
     pd-mapper \
     tqftpserv \
     qbootctl \
-    zram-generator
+    zram-generator \
+    NetworkManager-wifi \
+    @gnome-desktop \
+    firefox
+
+# Didn't remove from gnome-desktop:
+# totem
+# loupe
+# PackageKit-command-not-found
+# PackageKit
+# gnome-clocks
+# gnome-text-editor
+# baobab
+# evince
+# evince-djvu
+# gnome-system-monitor
+# gnome-calculator
+# gnome-calendar
+# gnome-contacts
+# gnome-logs
+# gnome-font-viewer
+# gnome-characters
 
 # Now, install the kernel. This will trigger UKI generation.
 echo "Installing kernel package to trigger UKI generation..."
