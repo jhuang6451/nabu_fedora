@@ -1,0 +1,3 @@
+[submodule "nabu_fedora_packages_uefi"]
+	path = nabu_fedora_packages_uefi
+	url = git@github.com:jhuang6451/nabu_fedora_packages_uefi.git
