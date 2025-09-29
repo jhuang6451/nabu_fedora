@@ -437,7 +437,6 @@ echo 'Fcitx5 autostart configured via system-wide symlink.'
 # ==========================================================================
 # --- 可选：创建并启用首次启动交互式配置服务 ---
 # ==========================================================================
-# # ---  ---
 # echo 'Creating interactive first-boot setup service...'
 # cat <<EOF > "/etc/systemd/system/first-boot-setup.service"
 # [Unit]
