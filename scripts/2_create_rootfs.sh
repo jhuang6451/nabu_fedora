@@ -84,7 +84,8 @@ dnf install -y --installroot="$ROOTFS_DIR" --forcearch="$ARCH" \
     --setopt="reposdir=${TEMP_REPO_DIR}" \
     --nogpgcheck \
     fedora-repos \
-    @core
+    bash \
+    dnf
 
 echo "Cleaning up temporary repository..."
 rm -rf -- "$TEMP_REPO_DIR"
@@ -178,7 +179,6 @@ dnf install -y --releasever=$RELEASEVER \
     pd-mapper \
     tqftpserv \
     NetworkManager-wifi \
-    qbootctl \
     zram-generator \
     glibc-langpack-en
 
@@ -212,6 +212,7 @@ dnf install -y \
     @standard \
     @base-graphical \
     @gnome-desktop \
+    qbootctl \
     firefox \
     NetworkManager-tui \
     fcitx5 \
