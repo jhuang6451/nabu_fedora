@@ -2,7 +2,12 @@
 
 # ==============================================================================
 # 4_create_release.sh
+# 4_create_release.sh
 #
+# 功能: 
+#   1. 从 rootfs 中提取 EFI 文件, 安装 systemd-boot, 并打包成zip 压缩包。
+#   2. 使用 xz 对 rootfs 镜像进行高效压缩。
+#   3. 创建一个带有动态信息的 GitHub Release 并上传所有资产。
 # 功能: 
 #   1. 从 rootfs 中提取 EFI 文件, 安装 systemd-boot, 并打包成zip 压缩包。
 #   2. 使用 xz 对 rootfs 镜像进行高效压缩。

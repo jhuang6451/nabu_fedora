@@ -87,7 +87,8 @@ dnf install -y --installroot="$ROOTFS_DIR" --forcearch="$ARCH" \
     --setopt="reposdir=${TEMP_REPO_DIR}" \
     --nogpgcheck \
     fedora-repos \
-    @core
+    bash \
+    dnf
 
 echo "Cleaning up temporary repository..."
 rm -rf -- "$TEMP_REPO_DIR"
@@ -117,46 +118,16 @@ set -o pipefail
 
 
 # ==========================================================================
-# --- 创建 dracut 和 ukify 配置以分别支持 initramfs 和 UKI 生成 ---
+# --- 安装基础软件包 ---
 # ==========================================================================
+# Install core packages.
+dnf install -y --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    --allowerasing \
+    @core
 
-# --- 创建 dracut 配置文件以生成 initramfs ---
-echo 'Creating dracut config for initramfs...'
-cat <<EOF > "/etc/dracut.conf.d/99-nabu-generic.conf"
-# Ensure dracut builds a generic image, not one tied to the build host hardware.
-hostonly="no"
-# 强制包含关键的存储驱动
-force_drivers+=" ufs_qcom ufshcd_pltfrm "
-#add_drivers+=" ufs_qcom ufshcd_pltfrm qcom-scm arm_smmu arm_smmu_v3 icc-rpmh "
-EOF
-echo 'Generic dracut config created.'
-
-# --- 创建 systemd-ukify 配置文件 ---
-echo 'Creating systemd-ukify config file...'
-mkdir -p "/etc/systemd/"
-cat <<'EOF' > "/etc/systemd/ukify.conf"
-[UKI]
-Cmdline=root=PARTLABEL=linux rw quiet systemd.gpt_auto=no cryptomgr.notests
-Stub=/usr/lib/systemd/boot/efi/linuxaa64.efi.stub
-EOF
-echo 'systemd-ukify config file created.'
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 提前创建ESP挂载点，作为UKI生成时的存放路径 ---
-# ==========================================================================
-echo 'Creating ESP mount point for UKI installation...'
-mkdir -p /boot/efi
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 安装必要的软件包 ---
-# ==========================================================================
-# Install basic packages.
+# Install basic packages and device specific packages.
 # systemd-boot-unsigned会提供生成UKI所需的linuxaarch64.efi.stub。
 echo 'Installing basic packages...'
 dnf install -y --releasever=$RELEASEVER \
@@ -170,21 +141,51 @@ dnf install -y --releasever=$RELEASEVER \
     systemd-ukify \
     xiaomi-nabu-firmware \
     xiaomi-nabu-audio \
-    glibc-langpack-en \
     binutils \
     xiaomi-nabu-audio \
     qrtr \
     rmtfs \
     pd-mapper \
     tqftpserv \
-    qbootctl \
-    zram-generator \
     NetworkManager-wifi \
-    NetworkManager-tui
-
+    zram-generator \
+    qbootctl \
+    glibc-langpack-en
 # Seems that kernel-install has a hidden dependency on grubby, but I don't use it now.
+# --------------------------------------------------------------------------
 
-# Now, install the kernel. This will trigger UKI generation.
+
+
+# ==========================================================================
+# --- 安装内核 & 配置并生成UKI ---
+# ==========================================================================
+# ===== 1. 创建配置文件 =====
+# --- 1.1 创建 dracut 配置文件以支持 initramfs 生成 ---
+echo 'Creating dracut config for initramfs...'
+cat <<EOF > "/etc/dracut.conf.d/99-nabu-generic.conf"
+# Ensure dracut builds a generic image, not one tied to the build host hardware.
+hostonly="no"
+# 强制包含关键的存储驱动
+force_drivers+=" ufs_qcom ufshcd_pltfrm "
+#add_drivers+=" ufs_qcom ufshcd_pltfrm qcom-scm arm_smmu arm_smmu_v3 icc-rpmh "
+EOF
+echo 'Generic dracut config created.'
+# --- 1.2 创建 systemd-ukify 配置文件以支持 UKI 生成 ---
+echo 'Creating systemd-ukify config file...'
+mkdir -p "/etc/systemd/"
+cat <<'EOF' > "/etc/systemd/ukify.conf"
+[UKI]
+Cmdline=root=PARTLABEL=linux rw quiet systemd.gpt_auto=no cryptomgr.notests
+Stub=/usr/lib/systemd/boot/efi/linuxaa64.efi.stub
+EOF
+echo 'systemd-ukify config file created.'
+
+# ===== 2. 提前创建ESP挂载点，作为UKI生成时的存放路径 =====
+echo 'Creating ESP mount point for UKI installation...'
+mkdir -p /boot/efi
+
+# ===== 3. 安装内核包 =====
+# This will trigger UKI generation.
 echo "Installing kernel package to trigger UKI generation..."
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
@@ -192,8 +193,24 @@ dnf install -y --releasever=$RELEASEVER \
     --setopt=install_weak_deps=False \
     kernel-sm8150
 
-# Install optional packages
-echo "Installing optional packages..."
+# ===== 4. 验证 UKI 生成 =====
+echo "Verifying UKI Generation after dnf install..."
+if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
+    echo "SUCCESS: UKI file(s) found!"
+    ls -lR /boot/efi/
+else
+    echo "CRITICAL ERROR: No UKI file found after RPM installation!" >&2
+    echo "This means the %posttrans script in the kernel RPM failed to generate the UKI." >&2
+    exit 1
+fi
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
+# --- 可选：安装附加软件包 ---
+# ==========================================================================
+echo "Installing additional packages..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
@@ -212,7 +229,14 @@ dnf install -y \
     @standard \
     @base-graphical \
     @gnome-desktop \
-    firefox
+    firefox \
+    NetworkManager-tui \
+    fcitx5 \
+    fcitx5-configtool \
+    fcitx5-gtk \
+    fcitx5-qt \
+    fcitx5-chinese-addons \
+    glibc-langpack-zh
 
 # Didn't remove from gnome-desktop:
 # totem
@@ -231,27 +255,15 @@ dnf install -y \
 # gnome-logs
 # gnome-font-viewer
 # gnome-characters
-
-
-# ==========================================================================
-# --- 验证 UKI 是否已生成 ---
-# ==========================================================================
-echo "Verifying UKI Generation after dnf install..."
-if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
-    echo "SUCCESS: UKI file(s) found!"
-    ls -lR /boot/efi/
-else
-    echo "CRITICAL ERROR: No UKI file found after RPM installation!" >&2
-    echo "This means the %posttrans script in the kernel RPM failed to generate the UKI." >&2
-    exit 1
-fi
 # --------------------------------------------------------------------------
 
 
 
 # ==========================================================================
-# --- 创建并启用 tqftpserv, rmtfs 和 qbootctl 服务 ---
+# --- 创建并启用服务 ---
 # ==========================================================================
+# 1. 可选：创建和启用 qbootctl 服务
+# qbootctl 用于在 Linux 系统中进行安卓设备A/B分区切换。
 echo 'Creating qbootctl.service file...'
 cat <<EOF > "/etc/systemd/system/qbootctl.service"
 [Unit]
@@ -263,18 +275,34 @@ RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target
 EOF
+echo 'Enabling qbootctl services...'
+systemctl enable qbootctl.service
 
-echo 'Enabling systemd services...'
+# 2. 必须：启用 tqftpserv 和 rmtfs 服务
 systemctl enable tqftpserv.service
 systemctl enable rmtfs.service
-systemctl enable qbootctl.service
+# --------------------------------------------------------------------------
+
+
+# ==========================================================================
+# --- 必须：添加 udev 规则以强制 /dev/rtc 链接到 rtc1 ---
+# ==========================================================================
+# 用于系统正确配置时钟。
+echo 'Adding udev rule 99-force-rtc1.rules...'
+mkdir -p "/etc/udev/rules.d"
+cat <<EOF > "/etc/udev/rules.d/99-force-rtc1.rules"
+# Force /dev/rtc symlink to point to rtc1 instead of rtc0.
+SUBSYSTEM=="rtc", KERNEL=="rtc1", SYMLINK+="rtc", OPTIONS+="link_priority=10"
+EOF
+echo 'Udev rule 99-force-rtc1.rules created.'
 # --------------------------------------------------------------------------
 
 
 
 # ==========================================================================
-# --- 创建 /etc/fstab ---
+# --- 必须：创建 /etc/fstab ---
 # ==========================================================================
+# 用于分区挂载。
 echo 'Creating /etc/fstab for automatic partition mounting...'
 cat <<EOF > "/etc/fstab"
 # /etc/fstab: static file system information.
@@ -286,8 +314,9 @@ EOF
 
 
 # ==========================================================================
-# --- 创建 systemd-boot 的 loader.conf ---
+# --- 可选：创建 systemd-boot 的 loader.conf ---
 # ==========================================================================
+# 用于使用 systemd-boot 作为启动管理器。
 echo 'Creating systemd-boot loader configuration...'
 mkdir -p "/boot/efi/loader/"
 cat <<EOF > "/boot/efi/loader/loader.conf"
@@ -296,13 +325,12 @@ timeout 6
 console-mode max
 default fedora-*
 EOF
-#TODO : 这里的 default 配置有没有问题？
 # --------------------------------------------------------------------------
 
 
 
 # ==========================================================================
-# --- 配置 zram 交换分区 ---
+# --- 可选：置 zram 交换分区 ---
 # ==========================================================================
 echo 'Configuring zram swap for improved performance under memory pressure...'
 # zram-generator-defaults is installed but we want to provide our own config
@@ -326,65 +354,96 @@ echo 'Zram swap configured.'
 
 
 # ==========================================================================
-# --- 集成首次启动服务 ---
+# --- 可选：预配置 locale ---
 # ==========================================================================
-
-# # --- 1. 创建并启用自动扩展文件系统服务 (非交互式) ---
-# echo 'Creating first-boot resize service...'
-
-# cat <<'EOF' > "/usr/local/bin/firstboot-resize.sh"
-# #!/bin/bash
-# set -e
-# # 获取根分区的设备路径 (e.g., /dev/mmcblk0pXX)
-# ROOT_DEV=$(findmnt -n -o SOURCE /)
-# if [ -z "$ROOT_DEV" ]; then
-#     echo "Could not find root device. Aborting resize." >&2
-#     exit 1
-# fi
-# echo "Resizing filesystem on ${ROOT_DEV}..."
-# # 扩展文件系统以填充整个分区
-# resize2fs "${ROOT_DEV}"
-# # 任务完成，禁用并移除此服务，确保下次启动不再运行
-# systemctl disable firstboot-resize.service
-# rm -f /etc/systemd/system/firstboot-resize.service
-# rm -f /usr/local/bin/firstboot-resize.sh
-# echo "Filesystem resized and service removed."
-# EOF
-
-# # 赋予脚本执行权限
-# chmod +x "/usr/local/bin/firstboot-resize.sh"
-
-# # 创建 systemd 服务单元
-# cat <<EOF > "/etc/systemd/system/firstboot-resize.service"
-# [Unit]
-# Description=Resize root filesystem to fill partition on first boot
-# # 确保在文件系统挂载后执行
-# After=local-fs.target
-
-# [Service]
-# Type=oneshot
-# ExecStart=/usr/local/bin/firstboot-resize.sh
-# # StandardOutput=journal+console
-# RemainAfterExit=false
-
-# [Install]
-# # 链接到默认的目标，使其能够自启动
-# WantedBy=default.target
-# EOF
-
-# # 启用服务
-# systemctl enable firstboot-resize.service
-# echo 'First-boot resize service created and enabled.'
-# ---------------------------------------------------------------------------
-# THIS IS NOLONGER NEEDED BECAUSE WE ARE USING x-systemd.growfs IN FSTAB
-# ---------------------------------------------------------------------------
-#TODO: Test then delete this.
+echo 'Setting system default locale to en_US.UTF-8...'
+# 在 chroot 环境中，systemd 服务没有运行，因此 localectl 命令无法使用。
+# glibc-langpack-en 软件包已在前面安装，确保了 en_US 的可用性。
+cat <<EOF > "/etc/locale.conf"
+LANG=en_US.UTF-8
+EOF
+echo 'System locale configured in /etc/locale.conf.'
+# --------------------------------------------------------------------------
 
 
-    
-# # 2. --- 创建并启用交互式配置服务 ---
+
+# ==========================================================================
+# --- 可选：预配置 GDM 显示器 ---
+# ==========================================================================
+echo 'Creating GDM monitor configuration for display...'
+# GDM 软件包应该已经创建了 gdm 用户和组。
+# 创建 GDM 配置所需的目录结构。
+mkdir -p "/var/lib/gdm/.config"
+
+# 创建 monitors.xml 文件，并写入完整配置文件，包含需要的屏幕旋转和缩放修改。
+cat <<EOF > "/var/lib/gdm/.config/monitors.xml"
+<monitors version="2">
+  <configuration>
+    <layoutmode>logical</layoutmode>
+    <logicalmonitor>
+      <x>0</x>
+      <y>0</y>
+      <scale>2</scale>
+      <primary>yes</primary>
+      <transform>
+        <rotation>right</rotation>
+        <flipped>no</flipped>
+      </transform>
+      <monitor>
+        <monitorspec>
+          <connector>DSI-1</connector>
+          <vendor>unknown</vendor>
+          <product>unknown</product>
+          <serial>unknown</serial>
+        </monitorspec>
+        <mode>
+          <width>1600</width>
+          <height>2560</height>
+          <rate>120.000</rate>
+        </mode>
+      </monitor>
+    </logicalmonitor>
+  </configuration>
+</monitors>
+EOF
+# 为配置文件及其父目录设置正确的所有权以让 GDM 读取配置。
+chown -R gdm:gdm "/var/lib/gdm/.config"
+echo 'GDM monitor configuration created and permissions set.'
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
+# --- 可选：配置 Fcitx5 输入法 ---
+# ==========================================================================
+# 1. 配置环境变量
+# 这是确保所有 GTK 和 Qt 应用程序能够正确调用 Fcitx5 输入法的关键步骤。
+# 通过 /etc/environment 文件来为所有用户会话设置这些变量。
+echo 'Configuring system-wide environment variables for Fcitx5...'
+cat <<EOF > "/etc/environment"
+XMODIFIERS=@im=fcitx
+GTK_IM_MODULE=fcitx
+QT_IM_MODULE=fcitx
+EOF
+echo 'Fcitx5 environment variables configured in /etc/environment.'
+
+# 2. 配置图形界面自启动
+# 根据 XDG Autostart 规范，
+# 将 .desktop 文件链接到系统级的自启动目录中，
+# 这样即使用户更新 fcitx5 软件包，自启动项也会指向最新的文件。
+echo 'Configuring Fcitx5 to autostart for all users...'
+mkdir -p "/etc/xdg/autostart"
+ln -s "/usr/share/applications/org.fcitx.Fcitx5.desktop" "/etc/xdg/autostart/org.fcitx.Fcitx5.desktop"
+echo 'Fcitx5 autostart configured via system-wide symlink.'
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
+# --- 可选：创建并启用首次启动交互式配置服务 ---
+# ==========================================================================
 # echo 'Creating interactive first-boot setup service...'
-# cat <<'EOF' > "/etc/systemd/system/first-boot-setup.service"
+# cat <<EOF > "/etc/systemd/system/first-boot-setup.service"
 # [Unit]
 # Description=Interactive First-Boot Setup
 # # 在 resize 服务之后，在图形界面之前运行
@@ -407,7 +466,7 @@ echo 'Zram swap configured.'
 # systemctl enable first-boot-setup.service
 
 echo 'First-boot services created and enabled.'
-#TODO: 交互式配置服务暂时无法正常运行
+#TODO: 交互式配置服务暂时无法正常运行。
 # --------------------------------------------------------------------------
 
 
@@ -427,10 +486,12 @@ echo '/etc/os-release customized.'
 
 
 # ===========================================================================================
-# --- temporary fix (because interactive post-install script won't work) 临时用户添加部分 ---
+# --- 可选/暂时：临时后配置 ---
 # ===========================================================================================
-echo 'Adding temporary user "user" with sudo privileges...'
+# Because interactive post-install script won't work,
+# We need to set up a user.
 
+echo 'Adding temporary user "user" with sudo privileges...'
 # 1. 创建名为 'user' 的用户，并将其加入 'wheel' 组。
 #    --create-home (-m) 确保创建用户的主目录 /home/user。
 #    --groups (-G) wheel 是在 Fedora/RHEL/CentOS 上授予 sudo 权限的标准做法。
@@ -461,7 +522,7 @@ echo '%wheel ALL=(ALL) ALL' > "$SUDOERS_FILE"
 chmod 0440 "$SUDOERS_FILE"
 echo "Sudo access for group 'wheel' has been configured via $SUDOERS_FILE."
 # ===========================================================================================
-# --- 临时用户添加结束 ---
+# --- 临时后配置结束 ---
 #TODO: remove this temporary user after interactive post-install script is fixed.
 # ===========================================================================================
 
