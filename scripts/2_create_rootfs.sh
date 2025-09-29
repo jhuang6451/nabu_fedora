@@ -18,8 +18,8 @@ ARCH="aarch64"
 ROOTFS_NAME="fedora-42-nabu-rootfs.img"
 IMG_SIZE="8G"
 
-# 定义发行版本
-BUILD_VERSION="42.2"
+# 发行版本号从 Workflow 获取
+BUILD_VERSION="${BUILD_VERSION:-42.2}"
 
 # Mount chroot filesystems 函数
 mount_chroot_fs() {

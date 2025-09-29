@@ -9,6 +9,7 @@ permissions:
 env:
   CONTAINER_IMAGE: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
   ROOTFS_NAME: fedora-42-nabu-rootfs.img
+  BUILD_VERSION: "42.2" # 自定义版本号
 
 jobs:
   build_rootfs:
@@ -21,6 +22,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create aarch64 rootfs
+        env:
+          BUILD_VERSION: ${{ env.BUILD_VERSION }}
         run: |
           cp ./scripts/2_create_rootfs.sh ./2_create_rootfs.sh
           chmod +x 2_create_rootfs.sh
@@ -43,6 +46,7 @@ jobs:
     env:
       ROOTFS_NAME: fedora-42-nabu-rootfs.img
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BUILD_VERSION: ${{ env.BUILD_VERSION }}
     steps:
       # 步骤 1: 先检出仓库，获取发布脚本
       - name: Checkout repository
