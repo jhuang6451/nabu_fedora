@@ -8,7 +8,7 @@ A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image 
 > **This is a work-in-progress, there may be bugs.**
 
 > [!NOTE]
-> Initial username is `user` and the password is `fedora`.
+> The initial username is `user` and the password is `fedora`.
 
 > [!NOTE]
 > The system is designed to work with [UEFI](https://github.com/Project-Aloha/mu_aloha_platforms), [DBKP](https://github.com/rodriguezst/nabu-dualboot-img) is also supported.As of [U-Boot](https://gitlab.com/sm8150-mainline/u-boot), I've yet to test it out.
@@ -32,19 +32,18 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 
 ## Features
 
-* **Fedora 42 Base Rootfs:** Rootfs image with basic packages, kernel & firmware.
-* **Unified Kernel Image (UKI):** Generates a UKI for a secure and streamlined boot process.
-* **systemd-boot:** Uses `systemd-boot` as default boot manager.
+* **Smooth Gnome Experience:** Packed with streamlined gnome DE and fcitx as default input method, providing solid out-of-the-box experience.
+* **Unified Kernel Image (UKI):** Utilizes UKI for a streamlined boot process.
+* **Dualboot With Android:** Installed alongside your android system, choose system at boot.
+* **Latest Kernel:** Built with latest mainline for sm8150 (6.16).
 
 ## Todos
 
 * [x] Fix UKI generation.
 * [x] Fix efi installation.
 * [x] Complete installation tutorial docs.
-* [ ] Fix some known bugs.
-* [ ] Dualboot optimization & tutorial.
-* [ ] Builds with other preinstalled packages & settings.
-* [ ] Implement post-install scripts.
+* [x] Fix some known bugs.
+* [x] Dualboot optimization.
 * [ ] Kernel update test.
 
 ## Bugs
