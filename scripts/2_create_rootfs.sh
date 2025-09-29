@@ -119,6 +119,7 @@ set -o pipefail
 dnf install -y --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
+    --allowerasing \
     @core
 
 # Install basic packages and device specific packages.
