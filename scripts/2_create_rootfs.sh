@@ -219,7 +219,8 @@ dnf install -y \
     fcitx5-configtool \
     fcitx5-gtk \
     fcitx5-qt \
-    fcitx5-chinese-addons
+    fcitx5-chinese-addons \
+    glibc-langpack-zh
 
 # Didn't remove from gnome-desktop:
 # totem
