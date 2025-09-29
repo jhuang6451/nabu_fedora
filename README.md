@@ -49,7 +49,10 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 ## Bugs
 You tell me.
 
-## Installation Tutorial
+## Installation Tutorial (Dualboot Supportive)
+
+> [!NOTE]
+> Re-partitioning your device destroys android's userdata, make sure all important files are backed up!!
 
 Requirements:
 
