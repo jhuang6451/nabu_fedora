@@ -142,9 +142,13 @@ fi
 TAG="release-${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
 RELEASE_TITLE="Fedora for Nabu ${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
 
-# 从环境变量获取手动输入的 changelog
-# The workflow passes github.event.inputs.changelog to this env var.
-CHANGELOG="${CHANGELOG_NOTES:-* No changelog provided.}"
+# 从 release-notes.md 文件读取 changelog
+if [ -f "release-notes.md" ]; then
+    CHANGELOG=$(cat release-notes.md)
+else
+    echo "WARNING: release-notes.md not found. Using default message for changelog."
+    CHANGELOG="* No changelog provided."
+fi
 
 # 生成新的发布说明
 COMMIT_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your/repo}/commit/${GITHUB_SHA:-HEAD}"
