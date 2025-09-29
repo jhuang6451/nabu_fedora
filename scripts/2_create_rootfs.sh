@@ -113,44 +113,7 @@ set -o pipefail
 
 
 # ==========================================================================
-# --- 创建 dracut 和 ukify 配置以分别支持 initramfs 和 UKI 生成 ---
-# ==========================================================================
-
-# --- 创建 dracut 配置文件以生成 initramfs ---
-echo 'Creating dracut config for initramfs...'
-cat <<EOF > "/etc/dracut.conf.d/99-nabu-generic.conf"
-# Ensure dracut builds a generic image, not one tied to the build host hardware.
-hostonly="no"
-# 强制包含关键的存储驱动
-force_drivers+=" ufs_qcom ufshcd_pltfrm "
-#add_drivers+=" ufs_qcom ufshcd_pltfrm qcom-scm arm_smmu arm_smmu_v3 icc-rpmh "
-EOF
-echo 'Generic dracut config created.'
-
-# --- 创建 systemd-ukify 配置文件 ---
-echo 'Creating systemd-ukify config file...'
-mkdir -p "/etc/systemd/"
-cat <<'EOF' > "/etc/systemd/ukify.conf"
-[UKI]
-Cmdline=root=PARTLABEL=linux rw quiet systemd.gpt_auto=no cryptomgr.notests
-Stub=/usr/lib/systemd/boot/efi/linuxaa64.efi.stub
-EOF
-echo 'systemd-ukify config file created.'
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 提前创建ESP挂载点，作为UKI生成时的存放路径 ---
-# ==========================================================================
-echo 'Creating ESP mount point for UKI installation...'
-mkdir -p /boot/efi
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 安装必要的软件包 ---
+# --- 安装基础软件包 ---
 # ==========================================================================
 # Install core packages.
 dnf install -y --releasever=$RELEASEVER \
@@ -181,10 +144,41 @@ dnf install -y --releasever=$RELEASEVER \
     NetworkManager-wifi \
     zram-generator \
     glibc-langpack-en
-
 # Seems that kernel-install has a hidden dependency on grubby, but I don't use it now.
+# --------------------------------------------------------------------------
 
-# Now, install the kernel. This will trigger UKI generation.
+
+
+# ==========================================================================
+# --- 安装内核 & 配置并生成UKI ---
+# ==========================================================================
+# ===== 1. 创建配置文件 =====
+# --- 1.1 创建 dracut 配置文件以支持 initramfs 生成 ---
+echo 'Creating dracut config for initramfs...'
+cat <<EOF > "/etc/dracut.conf.d/99-nabu-generic.conf"
+# Ensure dracut builds a generic image, not one tied to the build host hardware.
+hostonly="no"
+# 强制包含关键的存储驱动
+force_drivers+=" ufs_qcom ufshcd_pltfrm "
+#add_drivers+=" ufs_qcom ufshcd_pltfrm qcom-scm arm_smmu arm_smmu_v3 icc-rpmh "
+EOF
+echo 'Generic dracut config created.'
+# --- 1.2 创建 systemd-ukify 配置文件以支持 UKI 生成 ---
+echo 'Creating systemd-ukify config file...'
+mkdir -p "/etc/systemd/"
+cat <<'EOF' > "/etc/systemd/ukify.conf"
+[UKI]
+Cmdline=root=PARTLABEL=linux rw quiet systemd.gpt_auto=no cryptomgr.notests
+Stub=/usr/lib/systemd/boot/efi/linuxaa64.efi.stub
+EOF
+echo 'systemd-ukify config file created.'
+
+# ===== 2. 提前创建ESP挂载点，作为UKI生成时的存放路径 =====
+echo 'Creating ESP mount point for UKI installation...'
+mkdir -p /boot/efi
+
+# ===== 3. 安装内核包 =====
+# This will trigger UKI generation.
 echo "Installing kernel package to trigger UKI generation..."
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
@@ -192,7 +186,23 @@ dnf install -y --releasever=$RELEASEVER \
     --setopt=install_weak_deps=False \
     kernel-sm8150
 
-# Install additional packages.
+# ===== 4. 验证 UKI 生成 =====
+echo "Verifying UKI Generation after dnf install..."
+if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
+    echo "SUCCESS: UKI file(s) found!"
+    ls -lR /boot/efi/
+else
+    echo "CRITICAL ERROR: No UKI file found after RPM installation!" >&2
+    echo "This means the %posttrans script in the kernel RPM failed to generate the UKI." >&2
+    exit 1
+fi
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
+# --- 可选：安装附加软件包 ---
+# ==========================================================================
 echo "Installing additional packages..."
 dnf install -y \
     --releasever=$RELEASEVER \
@@ -239,27 +249,15 @@ dnf install -y \
 # gnome-logs
 # gnome-font-viewer
 # gnome-characters
-
-
-# ==========================================================================
-# --- 验证 UKI 是否已生成 ---
-# ==========================================================================
-echo "Verifying UKI Generation after dnf install..."
-if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
-    echo "SUCCESS: UKI file(s) found!"
-    ls -lR /boot/efi/
-else
-    echo "CRITICAL ERROR: No UKI file found after RPM installation!" >&2
-    echo "This means the %posttrans script in the kernel RPM failed to generate the UKI." >&2
-    exit 1
-fi
 # --------------------------------------------------------------------------
 
 
 
 # ==========================================================================
-# --- 创建并启用 tqftpserv, rmtfs 和 qbootctl 服务 ---
+# --- 创建并启用服务 ---
 # ==========================================================================
+# ===== 1. 可选：创建和启用 qbootctl 服务 =====
+# qbootctl 用于在 Linux 系统中进行安卓设备A/B分区切换。
 echo 'Creating qbootctl.service file...'
 cat <<EOF > "/etc/systemd/system/qbootctl.service"
 [Unit]
@@ -271,17 +269,19 @@ RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target
 EOF
+echo 'Enabling qbootctl services...'
+systemctl enable qbootctl.service
 
-echo 'Enabling systemd services...'
+# ===== 2. 必须：启用 tqftpserv 和 rmtfs 服务 =====
 systemctl enable tqftpserv.service
 systemctl enable rmtfs.service
-systemctl enable qbootctl.service
 # --------------------------------------------------------------------------
 
 
 # ==========================================================================
-# --- 添加 udev 规则以强制 /dev/rtc 链接到 rtc1 ---
+# --- 必须：添加 udev 规则以强制 /dev/rtc 链接到 rtc1 ---
 # ==========================================================================
+# 用于系统正确配置时钟。
 echo 'Adding udev rule 99-force-rtc1.rules...'
 mkdir -p "/etc/udev/rules.d"
 cat <<EOF > "/etc/udev/rules.d/99-force-rtc1.rules"
@@ -294,8 +294,9 @@ echo 'Udev rule 99-force-rtc1.rules created.'
 
 
 # ==========================================================================
-# --- 创建 /etc/fstab ---
+# --- 必须：创建 /etc/fstab ---
 # ==========================================================================
+# 用于分区挂载。
 echo 'Creating /etc/fstab for automatic partition mounting...'
 cat <<EOF > "/etc/fstab"
 # /etc/fstab: static file system information.
@@ -307,8 +308,9 @@ EOF
 
 
 # ==========================================================================
-# --- 创建 systemd-boot 的 loader.conf ---
+# --- 可选：创建 systemd-boot 的 loader.conf ---
 # ==========================================================================
+# 用于使用 systemd-boot 作为启动管理器。
 echo 'Creating systemd-boot loader configuration...'
 mkdir -p "/boot/efi/loader/"
 cat <<EOF > "/boot/efi/loader/loader.conf"
@@ -322,7 +324,7 @@ EOF
 
 
 # ==========================================================================
-# --- 配置 zram 交换分区 ---
+# --- 可选：置 zram 交换分区 ---
 # ==========================================================================
 echo 'Configuring zram swap for improved performance under memory pressure...'
 # zram-generator-defaults is installed but we want to provide our own config
@@ -346,7 +348,7 @@ echo 'Zram swap configured.'
 
 
 # ==========================================================================
-# --- 预配置 GDM 显示器 ---
+# --- 可选：预配置 GDM 显示器 ---
 # ==========================================================================
 echo 'Creating GDM monitor configuration for display...'
 # GDM 软件包应该已经创建了 gdm 用户和组。
@@ -384,7 +386,6 @@ cat <<EOF > "/var/lib/gdm/.config/monitors.xml"
   </configuration>
 </monitors>
 EOF
-
 # 为配置文件及其父目录设置正确的所有权以让 GDM 读取配置。
 chown -R gdm:gdm "/var/lib/gdm/.config"
 echo 'GDM monitor configuration created and permissions set.'
@@ -393,9 +394,9 @@ echo 'GDM monitor configuration created and permissions set.'
 
 
 # ==========================================================================
-# --- 集成首次启动服务 ---
+# --- 可选：创建并启用首次启动交互式配置服务 ---
 # ==========================================================================
-# # --- 创建并启用交互式配置服务 ---
+# # ---  ---
 # echo 'Creating interactive first-boot setup service...'
 # cat <<EOF > "/etc/systemd/system/first-boot-setup.service"
 # [Unit]
@@ -420,13 +421,13 @@ echo 'GDM monitor configuration created and permissions set.'
 # systemctl enable first-boot-setup.service
 
 echo 'First-boot services created and enabled.'
-#TODO: 交互式配置服务暂时无法正常运行
+#TODO: 交互式配置服务暂时无法正常运行。
 # --------------------------------------------------------------------------
 
 
 
 # ==========================================================================
-# --- 添加创建者签名到 /etc/os-release ---
+# --- 可选：添加创建者签名到 /etc/os-release ---
 # ==========================================================================
 echo 'Adding creator signature to /etc/os-release...'
 echo 'BUILD_CREATOR="jhuang6451"' >> "/etc/os-release"
@@ -435,10 +436,11 @@ echo 'BUILD_CREATOR="jhuang6451"' >> "/etc/os-release"
 
 
 # ===========================================================================================
-# --- temporary fix (because interactive post-install script won't work) 临时后配置 ---
+# --- 可选/暂时：临时后配置 ---
 # ===========================================================================================
-echo 'Adding temporary user "user" with sudo privileges...'
+#  Because interactive post-install script won't work。
 
+echo 'Adding temporary user "user" with sudo privileges...'
 # 1. 创建名为 'user' 的用户，并将其加入 'wheel' 组。
 #    --create-home (-m) 确保创建用户的主目录 /home/user。
 #    --groups (-G) wheel 是在 Fedora/RHEL/CentOS 上授予 sudo 权限的标准做法。
