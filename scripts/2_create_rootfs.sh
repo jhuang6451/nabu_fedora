@@ -144,6 +144,7 @@ dnf install -y --releasever=$RELEASEVER \
     tqftpserv \
     NetworkManager-wifi \
     zram-generator \
+    qbootctl \
     glibc-langpack-en
 # Seems that kernel-install has a hidden dependency on grubby, but I don't use it now.
 # --------------------------------------------------------------------------
@@ -223,7 +224,6 @@ dnf install -y \
     @standard \
     @base-graphical \
     @gnome-desktop \
-    qbootctl \
     firefox \
     NetworkManager-tui \
     fcitx5 \
