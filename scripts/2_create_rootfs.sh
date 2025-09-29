@@ -257,7 +257,7 @@ dnf install -y \
 # ==========================================================================
 # --- 创建并启用服务 ---
 # ==========================================================================
-# ===== 1. 可选：创建和启用 qbootctl 服务 =====
+# 1. 可选：创建和启用 qbootctl 服务
 # qbootctl 用于在 Linux 系统中进行安卓设备A/B分区切换。
 echo 'Creating qbootctl.service file...'
 cat <<EOF > "/etc/systemd/system/qbootctl.service"
@@ -273,7 +273,7 @@ EOF
 echo 'Enabling qbootctl services...'
 systemctl enable qbootctl.service
 
-# ===== 2. 必须：启用 tqftpserv 和 rmtfs 服务 =====
+# 2. 必须：启用 tqftpserv 和 rmtfs 服务
 systemctl enable tqftpserv.service
 systemctl enable rmtfs.service
 # --------------------------------------------------------------------------
@@ -349,6 +349,20 @@ echo 'Zram swap configured.'
 
 
 # ==========================================================================
+# --- 可选：预配置 locale ---
+# ==========================================================================
+echo 'Setting system default locale to en_US.UTF-8...'
+# 在 chroot 环境中，systemd 服务没有运行，因此 localectl 命令无法使用。
+# glibc-langpack-en 软件包已在前面安装，确保了 en_US 的可用性。
+cat <<EOF > "/etc/locale.conf"
+LANG=en_US.UTF-8
+EOF
+echo 'System locale configured in /etc/locale.conf.'
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
 # --- 可选：预配置 GDM 显示器 ---
 # ==========================================================================
 echo 'Creating GDM monitor configuration for display...'
@@ -390,6 +404,32 @@ EOF
 # 为配置文件及其父目录设置正确的所有权以让 GDM 读取配置。
 chown -R gdm:gdm "/var/lib/gdm/.config"
 echo 'GDM monitor configuration created and permissions set.'
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
+# --- 可选：配置 Fcitx5 输入法 ---
+# ==========================================================================
+# 1. 配置环境变量
+# 这是确保所有 GTK 和 Qt 应用程序能够正确调用 Fcitx5 输入法的关键步骤。
+# 通过 /etc/environment 文件来为所有用户会话设置这些变量。
+echo 'Configuring system-wide environment variables for Fcitx5...'
+cat <<EOF > "/etc/environment"
+XMODIFIERS=@im=fcitx
+GTK_IM_MODULE=fcitx
+QT_IM_MODULE=fcitx
+EOF
+echo 'Fcitx5 environment variables configured in /etc/environment.'
+
+# 2. 配置图形界面自启动
+# 根据 XDG Autostart 规范，
+# 将 .desktop 文件链接到系统级的自启动目录中，
+# 这样即使用户更新 fcitx5 软件包，自启动项也会指向最新的文件。
+echo 'Configuring Fcitx5 to autostart for all users...'
+mkdir -p "/etc/xdg/autostart"
+ln -s "/usr/share/applications/org.fcitx.Fcitx5.desktop" "/etc/xdg/autostart/org.fcitx.Fcitx5.desktop"
+echo 'Fcitx5 autostart configured via system-wide symlink.'
 # --------------------------------------------------------------------------
 
 
