@@ -100,6 +100,10 @@ fi
 echo "INFO: Copying EFI content from rootfs to temporary ESP..."
 rsync -a "$ROOTFS_EFI_CONTENT" "$EFI_MNT_POINT/"
 
+echo "INFO: Copying Reboot2Android EFI file..."
+mkdir -p "$EFI_MNT_POINT/EFI/Android"
+cp "additional_files/boot/efi/EFI/Android/Reboot2Android.efi" "$EFI_MNT_POINT/EFI/Android/"
+
 # 提取完成后立即卸载 rootfs
 echo "INFO: Unmounting rootfs image..."
 umount "$ROOTFS_MNT_POINT"

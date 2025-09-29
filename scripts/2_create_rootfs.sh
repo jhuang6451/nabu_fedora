@@ -325,6 +325,17 @@ timeout 6
 console-mode max
 default fedora-*
 EOF
+
+# 创建用于使用 systemd-boot 重启到安卓的启动项，
+# 这需要搭配 rodriguezst 的 nabu-dualboot-img 使用。
+# 用户需要使用上述项目修补android的 boot.img ，
+# 使其同时包含来自 mu_aloha_platforms 的 UEFI。
+echo 'Creating systemd-boot entry for Rebooting to Android...'
+mkdir -p "/boot/efi/loader/entries"
+cat <<EOF > "/boot/efi/loader/entries/reboot-to-android.conf"
+title   Reboot to Android
+efi     /EFI/Android/Reboot2Android.efi
+EOF
 # --------------------------------------------------------------------------
 
 
