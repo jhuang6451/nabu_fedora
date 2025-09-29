@@ -510,14 +510,6 @@ SUDOERS_FILE="/etc/sudoers.d/99-wheel-user"
 echo '%wheel ALL=(ALL) ALL' > "$SUDOERS_FILE"
 chmod 0440 "$SUDOERS_FILE"
 echo "Sudo access for group 'wheel' has been configured via $SUDOERS_FILE."
-
-# 4. 临时配置locale 
-echo 'Setting system default locale to en_US.UTF-8...'
-# 使用 localectl 是在 systemd 系统上设置区域的正确方法。
-# 它会自动创建或更新 /etc/locale.conf 文件。
-# glibc-langpack-en 软件包已在前面安装，确保了此 locale 的可用性。
-localectl set-locale LANG=en_US.UTF-8
-echo 'System locale configured.'
 # ===========================================================================================
 # --- 临时后配置结束 ---
 #TODO: remove this temporary user after interactive post-install script is fixed.
