@@ -283,7 +283,7 @@ systemctl enable qbootctl.service
 # ==========================================================================
 echo 'Adding udev rule 99-force-rtc1.rules...'
 mkdir -p "/etc/udev/rules.d"
-cat <<'EOF' > "/etc/udev/rules.d/99-force-rtc1.rules"
+cat <<EOF > "/etc/udev/rules.d/99-force-rtc1.rules"
 # Force /dev/rtc symlink to point to rtc1 instead of rtc0.
 SUBSYSTEM=="rtc", KERNEL=="rtc1", SYMLINK+="rtc", OPTIONS+="link_priority=10"
 EOF
@@ -316,7 +316,6 @@ timeout 6
 console-mode max
 default fedora-*
 EOF
-#TODO : 这里的 default 配置有没有问题？
 # --------------------------------------------------------------------------
 
 
@@ -346,65 +345,58 @@ echo 'Zram swap configured.'
 
 
 # ==========================================================================
+# --- 预配置 GDM 显示器 ---
+# ==========================================================================
+echo 'Creating GDM monitor configuration for display...'
+# GDM 软件包应该已经创建了 gdm 用户和组。
+# 创建 GDM 配置所需的目录结构。
+mkdir -p "/var/lib/gdm/.config"
+
+# 创建 monitors.xml 文件，并写入完整配置文件，包含需要的屏幕旋转和缩放修改。
+cat <<EOF > "/var/lib/gdm/.config/monitors.xml"
+<monitors version="2">
+  <configuration>
+    <layoutmode>logical</layoutmode>
+    <logicalmonitor>
+      <x>0</x>
+      <y>0</y>
+      <scale>2</scale>
+      <primary>yes</primary>
+      <transform>
+        <rotation>right</rotation>
+        <flipped>no</flipped>
+      </transform>
+      <monitor>
+        <monitorspec>
+          <connector>DSI-1</connector>
+          <vendor>unknown</vendor>
+          <product>unknown</product>
+          <serial>unknown</serial>
+        </monitorspec>
+        <mode>
+          <width>1600</width>
+          <height>2560</height>
+          <rate>120.000</rate>
+        </mode>
+      </monitor>
+    </logicalmonitor>
+  </configuration>
+</monitors>
+EOF
+
+# 为配置文件及其父目录设置正确的所有权以让 GDM 读取配置。
+chown -R gdm:gdm "/var/lib/gdm/.config"
+echo 'GDM monitor configuration created and permissions set.'
+# --------------------------------------------------------------------------
+
+
+
+# ==========================================================================
 # --- 集成首次启动服务 ---
 # ==========================================================================
-
-# # --- 1. 创建并启用自动扩展文件系统服务 (非交互式) ---
-# echo 'Creating first-boot resize service...'
-
-# cat <<'EOF' > "/usr/local/bin/firstboot-resize.sh"
-# #!/bin/bash
-# set -e
-# # 获取根分区的设备路径 (e.g., /dev/mmcblk0pXX)
-# ROOT_DEV=$(findmnt -n -o SOURCE /)
-# if [ -z "$ROOT_DEV" ]; then
-#     echo "Could not find root device. Aborting resize." >&2
-#     exit 1
-# fi
-# echo "Resizing filesystem on ${ROOT_DEV}..."
-# # 扩展文件系统以填充整个分区
-# resize2fs "${ROOT_DEV}"
-# # 任务完成，禁用并移除此服务，确保下次启动不再运行
-# systemctl disable firstboot-resize.service
-# rm -f /etc/systemd/system/firstboot-resize.service
-# rm -f /usr/local/bin/firstboot-resize.sh
-# echo "Filesystem resized and service removed."
-# EOF
-
-# # 赋予脚本执行权限
-# chmod +x "/usr/local/bin/firstboot-resize.sh"
-
-# # 创建 systemd 服务单元
-# cat <<EOF > "/etc/systemd/system/firstboot-resize.service"
-# [Unit]
-# Description=Resize root filesystem to fill partition on first boot
-# # 确保在文件系统挂载后执行
-# After=local-fs.target
-
-# [Service]
-# Type=oneshot
-# ExecStart=/usr/local/bin/firstboot-resize.sh
-# # StandardOutput=journal+console
-# RemainAfterExit=false
-
-# [Install]
-# # 链接到默认的目标，使其能够自启动
-# WantedBy=default.target
-# EOF
-
-# # 启用服务
-# systemctl enable firstboot-resize.service
-# echo 'First-boot resize service created and enabled.'
-# ---------------------------------------------------------------------------
-# THIS IS NOLONGER NEEDED BECAUSE WE ARE USING x-systemd.growfs IN FSTAB
-# ---------------------------------------------------------------------------
-#TODO: Test then delete this.
-
-
-    
-# # 2. --- 创建并启用交互式配置服务 ---
+# # --- 创建并启用交互式配置服务 ---
 # echo 'Creating interactive first-boot setup service...'
-# cat <<'EOF' > "/etc/systemd/system/first-boot-setup.service"
+# cat <<EOF > "/etc/systemd/system/first-boot-setup.service"
 # [Unit]
 # Description=Interactive First-Boot Setup
 # # 在 resize 服务之后，在图形界面之前运行
@@ -442,7 +434,7 @@ echo 'BUILD_CREATOR="jhuang6451"' >> "/etc/os-release"
 
 
 # ===========================================================================================
-# --- temporary fix (because interactive post-install script won't work) 临时用户添加部分 ---
+# --- temporary fix (because interactive post-install script won't work) 临时后配置 ---
 # ===========================================================================================
 echo 'Adding temporary user "user" with sudo privileges...'
 
@@ -475,8 +467,16 @@ SUDOERS_FILE="/etc/sudoers.d/99-wheel-user"
 echo '%wheel ALL=(ALL) ALL' > "$SUDOERS_FILE"
 chmod 0440 "$SUDOERS_FILE"
 echo "Sudo access for group 'wheel' has been configured via $SUDOERS_FILE."
+
+# 4. 临时配置locale 
+echo 'Setting system default locale to en_US.UTF-8...'
+# 使用 localectl 是在 systemd 系统上设置区域的正确方法。
+# 它会自动创建或更新 /etc/locale.conf 文件。
+# glibc-langpack-en 软件包已在前面安装，确保了此 locale 的可用性。
+localectl set-locale LANG=en_US.UTF-8
+echo 'System locale configured.'
 # ===========================================================================================
-# --- 临时用户添加结束 ---
+# --- 临时后配置结束 ---
 #TODO: remove this temporary user after interactive post-install script is fixed.
 # ===========================================================================================
 
