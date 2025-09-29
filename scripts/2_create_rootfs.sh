@@ -278,6 +278,19 @@ systemctl enable qbootctl.service
 # --------------------------------------------------------------------------
 
 
+# ==========================================================================
+# --- 添加 udev 规则以强制 /dev/rtc 链接到 rtc1 ---
+# ==========================================================================
+echo 'Adding udev rule 99-force-rtc1.rules...'
+mkdir -p "/etc/udev/rules.d"
+cat <<'EOF' > "/etc/udev/rules.d/99-force-rtc1.rules"
+# Force /dev/rtc symlink to point to rtc1 instead of rtc0.
+SUBSYSTEM=="rtc", KERNEL=="rtc1", SYMLINK+="rtc", OPTIONS+="link_priority=10"
+EOF
+echo 'Udev rule 99-force-rtc1.rules created.'
+# --------------------------------------------------------------------------
+
+
 
 # ==========================================================================
 # --- 创建 /etc/fstab ---
