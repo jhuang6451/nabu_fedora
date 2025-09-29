@@ -130,5 +130,5 @@ Steps:
 
 * [pocketblue](https://github.com/pocketblue/pocketblue) - Fedora Silverblue for nabu.
 * [nabu-fedora-builder](https://github.com/nik012003/nabu-fedora-builder) - Another minimum Fedora for nabu.
-* [nabu-alarm](https://github.com/nabu-alarm/) - Archlinux Arm for nabu.
+* [nabu-alarm](https://github.com/nabu-alarm/) - Archlinux Arm for nabu (EOL).
 * [Xiaomi-Nabu](https://github.com/TheMojoMan/Xiaomi-Nabu) - Ubuntu for nabu.
