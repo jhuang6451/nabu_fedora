@@ -151,7 +151,13 @@ mkdir -p /boot/efi
 # ==========================================================================
 # --- 安装必要的软件包 ---
 # ==========================================================================
-# Install basic packages.
+# Install core packages.
+dnf install -y --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    @core
+
+# Install basic packages and device specific packages.
 # systemd-boot-unsigned会提供生成UKI所需的linuxaarch64.efi.stub。
 echo 'Installing basic packages...'
 dnf install -y --releasever=$RELEASEVER \
@@ -165,17 +171,16 @@ dnf install -y --releasever=$RELEASEVER \
     systemd-ukify \
     xiaomi-nabu-firmware \
     xiaomi-nabu-audio \
-    glibc-langpack-en \
     binutils \
     xiaomi-nabu-audio \
     qrtr \
     rmtfs \
     pd-mapper \
     tqftpserv \
+    NetworkManager-wifi \
     qbootctl \
     zram-generator \
-    NetworkManager-wifi \
-    NetworkManager-tui
+    glibc-langpack-en
 
 # Seems that kernel-install has a hidden dependency on grubby, but I don't use it now.
 
@@ -187,8 +192,8 @@ dnf install -y --releasever=$RELEASEVER \
     --setopt=install_weak_deps=False \
     kernel-sm8150
 
-# Install optional packages
-echo "Installing optional packages..."
+# Install additional packages.
+echo "Installing additional packages..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
@@ -207,7 +212,13 @@ dnf install -y \
     @standard \
     @base-graphical \
     @gnome-desktop \
-    firefox
+    firefox \
+    NetworkManager-tui \
+    fcitx5 \
+    fcitx5-configtool \
+    fcitx5-gtk \
+    fcitx5-qt \
+    fcitx5-chinese-addons
 
 # Didn't remove from gnome-desktop:
 # totem
