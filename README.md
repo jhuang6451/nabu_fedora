@@ -41,9 +41,14 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 * [x] Fix UKI generation.
 * [x] Fix efi installation.
 * [x] Complete installation tutorial docs.
-* [ ] Builds with other DEs.
+* [ ] Fix some known bugs.
+* [ ] Dualboot optimization & tutorial.
+* [ ] Builds with other preinstalled packages & settings.
 * [ ] Implement post-install scripts.
 * [ ] Kernel update test.
+
+## Bugs
+You tell me.
 
 ## Installation Tutorial
 
@@ -108,7 +113,7 @@ Steps:
 > [!NOTE]
 > Make sure the rootfs is decompressed, it should end with `.img` rather than `,img.xz`.
 
-## Chats & Support Groups
+## Support Groups
 
 * [nabulinux](https://t.me/nabulinux) - Telegram group for Xiaomi Pad 5 linux.
 
@@ -126,3 +131,4 @@ Steps:
 * [pocketblue](https://github.com/pocketblue/pocketblue) - Fedora Silverblue for nabu.
 * [nabu-fedora-builder](https://github.com/nik012003/nabu-fedora-builder) - Another minimum Fedora for nabu.
 * [nabu-alarm](https://github.com/nabu-alarm/) - Archlinux Arm for nabu.
+* [Xiaomi-Nabu](https://github.com/TheMojoMan/Xiaomi-Nabu) - Ubuntu for nabu.
