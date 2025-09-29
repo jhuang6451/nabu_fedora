@@ -1,7 +1,12 @@
 name: '2. Build Fedora for Nabu'
 
 on:
-  workflow_dispatch: # 允许手动触发
+  workflow_dispatch:
+    inputs:
+      changelog:
+        description: 'Release Changelog'
+        required: false
+        default: '* No changelog provided.'
 
 permissions:
   contents: write # 为了创建 Release
@@ -44,6 +49,7 @@ jobs:
     env:
       ROOTFS_NAME: fedora-42-nabu-rootfs.img
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CHANGELOG_NOTES: ${{ github.event.inputs.changelog }}
     steps:
       # 步骤 1: 先检出仓库，获取发布脚本
       - name: Checkout repository

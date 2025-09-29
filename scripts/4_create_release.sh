@@ -140,16 +140,24 @@ fi
 
 # 7. 准备创建 Release
 TAG="release-${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
-RELEASE_TITLE="Fedora for Nabu ${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"  
+RELEASE_TITLE="Fedora for Nabu ${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
+
+# 从环境变量获取手动输入的 changelog
+# The workflow passes github.event.inputs.changelog to this env var.
+CHANGELOG="${CHANGELOG_NOTES:-* No changelog provided.}"
+
 # 生成新的发布说明
 COMMIT_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your/repo}/commit/${GITHUB_SHA:-HEAD}"
 RELEASE_NOTES=$(cat <<EOF
 Automated build of Fedora 42 for Xiaomi Pad 5 (nabu).
 
-**Assets:**
+## Changelog
+${CHANGELOG}
 
-- ${ROOTFS_FILENAME}.xz - The compressed rootfs image. Decompress before use.
-- ${EFI_ZIP_NAME} - Contains the bootloader and kernel (UKI) and systemed-boot. Unzip and copy the contents to your existing ESP partition. See the tutorial for details.
+## Assets
+
+- \`${ROOTFS_FILENAME}.xz\` - The compressed rootfs image. Decompress before use.
+- \`${EFI_ZIP_NAME}\` - Contains the bootloader and kernel (UKI) and systemd-boot. Unzip and copy the contents to your existing ESP partition. See the tutorial for details.
 
 This build is based on commit: [${GITHUB_SHA:0:7}](${COMMIT_URL})
 EOF
