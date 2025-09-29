@@ -18,6 +18,9 @@ ARCH="aarch64"
 ROOTFS_NAME="fedora-42-nabu-rootfs.img"
 IMG_SIZE="8G"
 
+# 定义发行版本
+BUILD_VERSION="42.2"
+
 # Mount chroot filesystems 函数
 mount_chroot_fs() {
     echo "Mounting chroot filesystems into $ROOTFS_DIR..."
@@ -103,6 +106,8 @@ run_in_chroot() {
     # 将变量导出，以便子 shell (chroot) 可以继承它们
     export RELEASEVER="$RELEASEVER"
     export ARCH="$ARCH"
+
+    export BUILD_VERSION="$BUILD_VERSION" # 传入定义的版本号
 
     # 使用 cat 将此函数内的所有命令通过管道传给 chroot
     cat <<'CHROOT_SCRIPT' | chroot "$ROOTFS_DIR" /bin/bash
@@ -408,10 +413,15 @@ echo 'First-boot services created and enabled.'
 
 
 # ==========================================================================
-# --- 添加创建者签名到 /etc/os-release ---
+# --- 自定义 /etc/os-release ---
 # ==========================================================================
-echo 'Adding creator signature to /etc/os-release...'
+echo 'Setting /etc/os-release...'
+# ${BUILD_VERSION} 是从主脚本中导入的。
+sed -i "s/^PRETTY_NAME=.*/PRETTY_NAME=\"Fedora for Nabu ${BUILD_VERSION}\"/" "/etc/os-release"
+
+# 添加创建者签名
 echo 'BUILD_CREATOR="jhuang6451"' >> "/etc/os-release"
+echo '/etc/os-release customized.'
 # --------------------------------------------------------------------------
 
 

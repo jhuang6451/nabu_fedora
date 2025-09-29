@@ -26,7 +26,10 @@ fi
 
 # --- 配置变量 ---
 echo "INFO: Reading configuration from environment variables..."
-ROOTFS_FILENAME="${ROOTFS_NAME:-fedora-42-nabu-rootfs.img}"
+RELEASEVER="42"
+BUILD_VERSION="42.1"                                     # <---  版本号定义
+
+ROOTFS_FILENAME="${ROOTFS_NAME:-fedora-${RELEASEVER}-nabu-rootfs.img}"
 EFI_ZIP_NAME="efi-files.zip"
 
 # --- 路径定义 ---
@@ -131,8 +134,8 @@ if [ ! -f "$EFI_ZIP_NAME" ]; then
 fi
 
 # 7. 准备创建 Release
-TAG="release-42.1-$(date +'%Y%m%d-%H%M')"
-RELEASE_TITLE="Fedora for Nabu 42.1-$(date +'%Y%m%d-%H%M')"
+TAG="release-${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"                              # <---  使用 BUILD_VERSION 变量
+RELEASE_TITLE="Fedora for Nabu ${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"  
 # 生成新的发布说明
 COMMIT_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your/repo}/commit/${GITHUB_SHA:-HEAD}"
 RELEASE_NOTES=$(cat <<EOF
