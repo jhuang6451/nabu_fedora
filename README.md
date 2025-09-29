@@ -1,4 +1,4 @@
-# Fedora 42 for Nabu
+# Fedora for Nabu
 
 English | [Simplified-Chinese(WIP)](./docs/README.zh.md)
 
