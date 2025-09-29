@@ -478,7 +478,8 @@ echo 'BUILD_CREATOR="jhuang6451"' >> "/etc/os-release"
 # ===========================================================================================
 # --- 可选/暂时：临时后配置 ---
 # ===========================================================================================
-#  Because interactive post-install script won't work。
+# Because interactive post-install script won't work,
+# We need to set up a user.
 
 echo 'Adding temporary user "user" with sudo privileges...'
 # 1. 创建名为 'user' 的用户，并将其加入 'wheel' 组。
