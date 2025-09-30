@@ -1,5 +1,3 @@
-# Release Notes
-
 Fixed:
 
 * Some packages fail to function properly due to postinstall not being executed properly.

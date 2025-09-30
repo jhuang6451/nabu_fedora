@@ -143,8 +143,8 @@ TAG="release-${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
 RELEASE_TITLE="Fedora for Nabu ${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
 
 # 从 release-notes.md 文件读取 changelog
-if [ -f "release-notes.md" ]; then
-    CHANGELOG=$(cat release-notes.md)
+if [ -f "docs/release-notes.md" ]; then
+    CHANGELOG=$(cat docs/release-notes.md)
 else
     echo "WARNING: release-notes.md not found. Using default message for changelog."
     CHANGELOG="* No changelog provided."
@@ -156,6 +156,7 @@ RELEASE_NOTES=$(cat <<EOF
 Automated build of Fedora 42 for Xiaomi Pad 5 (nabu).
 
 ## Changelog
+
 ${CHANGELOG}
 
 ## Assets
