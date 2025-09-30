@@ -1,6 +1,6 @@
 # Fedora for Nabu
 
-English | [Simplified-Chinese(WIP)](./docs/README.zh.md)
+English | [Simplified-Chinese](./docs/README.zh.md)
 
 A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image for the Xiaomi Pad 5 (nabu) device (aarch64), along with tutorials and resources for installation. The build process produces a bootable root filesystem and efi files.
 
