@@ -185,7 +185,7 @@ fi
 
 
 # ==========================================================================
-# --- 可选：安装附加软件包 & extra 配置 & branding 配置 ---
+# --- 安装附加软件包 ---
 # ==========================================================================
 echo "Installing additional packages..."
 dnf install -y \
@@ -215,6 +215,10 @@ dnf install -y \
     fcitx5-chinese-addons \
     glibc-langpack-zh
 
+
+# ==========================================================================
+# --- 安装额外配置和 dualboot efi 文件包 ---
+# ==========================================================================
 echo "Installing additional config packages..."
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr-old,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
@@ -222,7 +226,8 @@ dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     nabu-fedora-configs-extra \
-    nabu-fedora-configs-branding
+    nabu-fedora-configs-branding \
+    nabu-fedora-dualboot-efi
 # --------------------------------------------------------------------------
 
 

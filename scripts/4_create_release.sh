@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # ==============================================================================
-# 4_create_release.sh
+# 4_create_release.sh (Modified)
 #
 # 功能: 
-#   1. 从 rootfs 中提取 EFI 文件, 安装 systemd-boot, 并打包成zip 压缩包。
+#   1. 从 rootfs 中直接提取 EFI 文件, 并打包成 zip 压缩包。
 #   2. 使用 xz 对 rootfs 镜像进行高效压缩。
 #   3. 创建一个带有动态信息的 GitHub Release 并上传所有资产。
 #
 # 作者: jhuang6451
-# 版本: 1.0
+# 版本: 1.1 (Modified)
 # ==============================================================================
 
 set -e
@@ -42,10 +42,7 @@ ROOTFS_COMPRESSED_PATH="${ROOTFS_PATH}.xz"
 
 # --- 临时目录和挂载点 ---
 ROOTFS_MNT_POINT=$(mktemp -d)
-EFI_BUILD_DIR=$(mktemp -d)
-EFI_IMG_PATH="${EFI_BUILD_DIR}/esp.img"
-EFI_MNT_POINT="${EFI_BUILD_DIR}/esp"
-mkdir -p "$EFI_MNT_POINT"
+EFI_EXTRACT_DIR=$(mktemp -d) # 直接提取到此目录
 
 # --- 清理函数 ---
 cleanup() {
@@ -53,9 +50,8 @@ cleanup() {
     # sync
     # Unmount quietly, ignoring errors if it's not mounted
     umount "$ROOTFS_MNT_POINT" 2>/dev/null || true
-    umount "$EFI_MNT_POINT" 2>/dev/null || true
     # Remove temporary directories
-    rm -rf "$ROOTFS_MNT_POINT" "$EFI_BUILD_DIR"
+    rm -rf "$ROOTFS_MNT_POINT" "$EFI_EXTRACT_DIR"
     echo "INFO: Cleanup complete."
 }
 # Register the cleanup function to run on script exit (normal or error)
@@ -74,15 +70,7 @@ if [ ! -f "$ROOTFS_PATH" ]; then
 fi
 echo "INFO: Rootfs artifact found."
 
-# 2. 创建一个临时的 FAT32 镜像作为 ESP
-ESP_SIZE_MB=100
-echo "INFO: Creating a temporary ${ESP_SIZE_MB}MB FAT32 image for the ESP..."
-fallocate -l "${ESP_SIZE_MB}M" "$EFI_IMG_PATH"
-mkfs.vfat -F 32 "$EFI_IMG_PATH"
-mount -o loop "$EFI_IMG_PATH" "$EFI_MNT_POINT"
-echo "INFO: Temporary ESP image mounted at '${EFI_MNT_POINT}'."
-
-# 3. 挂载 Rootfs 镜像并提取 EFI 文件到 ESP 镜像中
+# 2. 挂载 Rootfs 镜像并提取 EFI 文件到临时目录
 echo "INFO: Mounting rootfs image to extract EFI files..."
 mount -o loop,ro "$ROOTFS_PATH" "$ROOTFS_MNT_POINT"
 
@@ -93,42 +81,27 @@ if [ ! -d "$ROOTFS_EFI_CONTENT" ] || [ -z "$(ls -A "$ROOTFS_EFI_CONTENT")" ]; th
     exit 1
 fi
 
-echo "INFO: Copying EFI content from rootfs to temporary ESP..."
-rsync -a "$ROOTFS_EFI_CONTENT" "$EFI_MNT_POINT/"
-
-echo "INFO: Copying Reboot2Android EFI file..."
-mkdir -p "$EFI_MNT_POINT/EFI/Android"
-cp "additional_files/boot/efi/EFI/Android/Reboot2Android.efi" "$EFI_MNT_POINT/EFI/Android/"
+echo "INFO: Copying EFI content from rootfs to temporary directory..."
+# 将efi目录下的所有内容（包括隐藏文件）复制到提取目录
+rsync -a "${ROOTFS_EFI_CONTENT}" "${EFI_EXTRACT_DIR}/"
 
 # 提取完成后立即卸载 rootfs
 echo "INFO: Unmounting rootfs image..."
 umount "$ROOTFS_MNT_POINT"
 
-# 4. 安装 systemd-boot 到 ESP 镜像
-echo "INFO: Installing systemd-boot into the ESP image..."
-if ! bootctl --esp-path="$EFI_MNT_POINT" install; then
-    echo "ERROR: bootctl install failed." >&2
-    echo "--- Listing contents of EFI_MNT_POINT ('${EFI_MNT_POINT}') ---"
-    ls -R "${EFI_MNT_POINT}"
-    echo "--------------------------------------------------------"
-    exit 1
-fi
-echo "INFO: systemd-boot installed successfully."
-
-# 5. 创建 EFI zip 压缩包
-echo "INFO: Creating '${EFI_ZIP_NAME}'..."
-# Runnin' the zip command in a subshell. This prevents 'cd' from affecting the
-# main script's working directory. The zip is created in the original PWD.
+# 3. 创建 EFI zip 压缩包
+echo "INFO: Creating '${EFI_ZIP_NAME}' from extracted files..."
+# 在子shell中运行zip命令，以防止'cd'影响主脚本的工作目录。
 ORIGINAL_PWD=$PWD
-(cd "$EFI_MNT_POINT" && zip -r "$ORIGINAL_PWD/${EFI_ZIP_NAME}" .)
+(cd "$EFI_EXTRACT_DIR" && zip -r "$ORIGINAL_PWD/${EFI_ZIP_NAME}" .)
 echo "INFO: EFI zip package created successfully."
 
-# 5. 将 rootfs img 文件高效压缩为 .xz
+# 4. 将 rootfs img 文件高效压缩为 .xz
 echo "INFO: Compressing '${ROOTFS_PATH}' using xz with multi-threading..."
 xz -T0 -v "$ROOTFS_PATH"
 echo "INFO: Compression successful. Output: '${ROOTFS_COMPRESSED_PATH}'"
 
-# 6. 检查压缩文件和 zip 包是否存在
+# 5. 检查压缩文件和 zip 包是否存在
 if [ ! -f "$ROOTFS_COMPRESSED_PATH" ]; then
     echo "ERROR: Compressed rootfs file was not created!"
     exit 1
@@ -138,7 +111,7 @@ if [ ! -f "$EFI_ZIP_NAME" ]; then
     exit 1
 fi
 
-# 7. 准备创建 Release
+# 6. 准备创建 Release
 TAG="release-${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
 RELEASE_TITLE="Fedora for Nabu ${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
 
@@ -162,13 +135,13 @@ ${CHANGELOG}
 ## Assets
 
 - \`${ROOTFS_FILENAME}.xz\` - The compressed rootfs image. Decompress before use.
-- \`${EFI_ZIP_NAME}\` - Contains the bootloader and kernel (UKI) and systemd-boot. Unzip and copy the contents to your existing ESP partition. See the tutorial for details.
+- \`${EFI_ZIP_NAME}\` - Contains the bootloader and kernel (UKI). Unzip and copy the contents to your existing ESP partition. See the tutorial for details.
 
 This build is based on commit: [${GITHUB_SHA:0:7}](${COMMIT_URL})
 EOF
 )
 
-# 8. 创建 Release 并上传资产
+# 7. 创建 Release 并上传资产
 echo "INFO: Creating GitHub release '${TAG}'..."
 gh release create "$TAG" \
     --title "$RELEASE_TITLE" \
