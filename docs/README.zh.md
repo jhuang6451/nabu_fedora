@@ -4,14 +4,8 @@
 
 这是一套脚本和 GitHub Actions 工作流，用于为小米平板 5 (nabu) 设备 (aarch64) 构建自定义的 Fedora 42 镜像，并附有安装教程和相关资源。构建过程会生成一个可启动的根文件系统和 efi 文件。
 
-> [!IMPORTANT]
-> **本项目仍在开发中，可能存在bug。**
-
 > [!NOTE]
 > 初始用户名是 `user`，密码是 `fedora`。
-
-> [!NOTE]
-> 本系统设计用于配合 [UEFI](https://github.com/Project-Aloha/mu_aloha_platforms) 运行，同时也支持 [DBKP](https://github.com/rodriguezst/nabu-dualboot-img)。至于 [U-Boot](https://gitlab.com/sm8150-mainline/u-boot)，我尚未进行测试。
 
 
 ## 免责声明
@@ -36,15 +30,6 @@
 *   **统一内核镜像 (UKI)：** 利用 UKI 技术简化启动流程。
 *   **与安卓双系统共存：** 可与您的安卓系统并存安装，在开机时选择进入哪个系统。
 *   **最新的内核：** 基于最新的 sm8150 主线内核 (6.16) 构建。
-
-## 待办事项
-
-*   [x] 修复 UKI 生成问题。
-*   [x] 修复 efi 安装问题。
-*   [x] 完成安装教程文档。
-*   [x] 修复一些已知错误。
-*   [x] 双系统启动优化。
-*   [ ] 内核更新测试。
 
 ## Bug
 等你来发现。
