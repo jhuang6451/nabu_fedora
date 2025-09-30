@@ -133,6 +133,7 @@ echo 'Installing basic packages...'
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     --exclude dracut-config-rescue \
@@ -150,41 +151,17 @@ dnf install -y --releasever=$RELEASEVER \
     NetworkManager-wifi \
     zram-generator \
     qbootctl \
-    glibc-langpack-en
-# Seems that kernel-install has a hidden dependency on grubby, but I don't use it now.
+    glibc-langpack-en \
+    nabu-fedora-configs-core
+# Note:
+# nabu-fedora-configs-core needs to be installed before kernel.
 # --------------------------------------------------------------------------
-
+# Seems that kernel-install has a hidden dependency on grubby, but I don't use it now.
 
 
 # ==========================================================================
-# --- 安装内核 & 配置并生成UKI ---
+# --- 安装内核 ---
 # ==========================================================================
-# ===== 1. 创建配置文件 =====
-# --- 1.1 创建 dracut 配置文件以支持 initramfs 生成 ---
-echo 'Creating dracut config for initramfs...'
-cat <<EOF > "/etc/dracut.conf.d/99-nabu-generic.conf"
-# Ensure dracut builds a generic image, not one tied to the build host hardware.
-hostonly="no"
-# 强制包含关键的存储驱动
-force_drivers+=" ufs_qcom ufshcd_pltfrm "
-#add_drivers+=" ufs_qcom ufshcd_pltfrm qcom-scm arm_smmu arm_smmu_v3 icc-rpmh "
-EOF
-echo 'Generic dracut config created.'
-# --- 1.2 创建 systemd-ukify 配置文件以支持 UKI 生成 ---
-echo 'Creating systemd-ukify config file...'
-mkdir -p "/etc/systemd/"
-cat <<'EOF' > "/etc/systemd/ukify.conf"
-[UKI]
-Cmdline=root=PARTLABEL=linux rw quiet systemd.gpt_auto=no cryptomgr.notests
-Stub=/usr/lib/systemd/boot/efi/linuxaa64.efi.stub
-EOF
-echo 'systemd-ukify config file created.'
-
-# ===== 2. 提前创建ESP挂载点，作为UKI生成时的存放路径 =====
-echo 'Creating ESP mount point for UKI installation...'
-mkdir -p /boot/efi
-
-# ===== 3. 安装内核包 =====
 # This will trigger UKI generation.
 echo "Installing kernel package to trigger UKI generation..."
 dnf install -y --releasever=$RELEASEVER \
@@ -208,7 +185,7 @@ fi
 
 
 # ==========================================================================
-# --- 可选：安装附加软件包 ---
+# --- 可选：安装附加软件包 & extra 配置 & branding 配置 ---
 # ==========================================================================
 echo "Installing additional packages..."
 dnf install -y \
@@ -238,78 +215,16 @@ dnf install -y \
     fcitx5-chinese-addons \
     glibc-langpack-zh
 
-# Didn't remove from gnome-desktop:
-# totem
-# loupe
-# PackageKit-command-not-found
-# PackageKit
-# gnome-clocks
-# gnome-text-editor
-# baobab
-# evince
-# evince-djvu
-# gnome-system-monitor
-# gnome-calculator
-# gnome-calendar
-# gnome-contacts
-# gnome-logs
-# gnome-font-viewer
-# gnome-characters
+echo "Installing additional config packages..."
+dnf install -y --releasever=$RELEASEVER \
+    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --nogpgcheck \
+    nabu-fedora-configs-extra \
+    nabu-fedora-configs-branding
 # --------------------------------------------------------------------------
 
-
-
-# ==========================================================================
-# --- 创建并启用服务 ---
-# ==========================================================================
-# 1. 可选：创建和启用 qbootctl 服务
-# qbootctl 用于在 Linux 系统中进行安卓设备A/B分区切换。
-echo 'Creating qbootctl.service file...'
-cat <<EOF > "/etc/systemd/system/qbootctl.service"
-[Unit]
-Description=Qualcomm boot slot ctrl mark boot successful
-[Service]
-ExecStart=/usr/bin/qbootctl -m
-Type=oneshot
-RemainAfterExit=yes
-[Install]
-WantedBy=multi-user.target
-EOF
-echo 'Enabling qbootctl services...'
-systemctl enable qbootctl.service
-
-# 2. 必须：启用 tqftpserv 和 rmtfs 服务
-systemctl enable tqftpserv.service
-systemctl enable rmtfs.service
-# --------------------------------------------------------------------------
-
-
-# ==========================================================================
-# --- 必须：添加 udev 规则以强制 /dev/rtc 链接到 rtc1 ---
-# ==========================================================================
-# 用于系统正确配置时钟。
-echo 'Adding udev rule 99-force-rtc1.rules...'
-mkdir -p "/etc/udev/rules.d"
-cat <<EOF > "/etc/udev/rules.d/99-force-rtc1.rules"
-# Force /dev/rtc symlink to point to rtc1 instead of rtc0.
-SUBSYSTEM=="rtc", KERNEL=="rtc1", SYMLINK+="rtc", OPTIONS+="link_priority=10"
-EOF
-echo 'Udev rule 99-force-rtc1.rules created.'
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 必须：创建 /etc/fstab ---
-# ==========================================================================
-# 用于分区挂载。
-echo 'Creating /etc/fstab for automatic partition mounting...'
-cat <<EOF > "/etc/fstab"
-# /etc/fstab: static file system information.
-PARTLABEL=linux  /                  ext4   rw,errors=remount-ro,x-systemd.growfs  0 1
-PARTLABEL=esp    /boot/efi/         vfat   fmask=0022,dmask=0022                  0 1
-EOF
-# --------------------------------------------------------------------------
 
 
 
@@ -336,116 +251,6 @@ cat <<EOF > "/boot/efi/loader/entries/reboot-to-android.conf"
 title   Reboot to Android
 efi     /EFI/Android/Reboot2Android.efi
 EOF
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 可选：置 zram 交换分区 ---
-# ==========================================================================
-echo 'Configuring zram swap for improved performance under memory pressure...'
-# zram-generator-defaults is installed but we want to provide our own config
-mkdir -p "/etc/systemd/"
-cat <<EOF > "/etc/systemd/zram-generator.conf"
-# This configuration enables a compressed RAM-based swap device (zram).
-# It significantly improves system responsiveness and multitasking on
-# devices with a fixed amount of RAM.
-[zram0]
-# Set the uncompressed swap size to be equal to the total physical RAM.
-# This is a balanced value providing a large swap space without risking
-# system thrashing under heavy load.
-zram-size = ram
-
-# Use zstd compression for the best balance of speed and compression ratio.
-compression-algorithm = zstd
-EOF
-echo 'Zram swap configured.'
-# ==========================================================================
-
-
-
-# ==========================================================================
-# --- 可选：预配置 locale ---
-# ==========================================================================
-echo 'Setting system default locale to en_US.UTF-8...'
-# 在 chroot 环境中，systemd 服务没有运行，因此 localectl 命令无法使用。
-# glibc-langpack-en 软件包已在前面安装，确保了 en_US 的可用性。
-cat <<EOF > "/etc/locale.conf"
-LANG=en_US.UTF-8
-EOF
-echo 'System locale configured in /etc/locale.conf.'
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 可选：预配置 GDM 显示器 ---
-# ==========================================================================
-echo 'Creating GDM monitor configuration for display...'
-# GDM 软件包应该已经创建了 gdm 用户和组。
-# 创建 GDM 配置所需的目录结构。
-mkdir -p "/var/lib/gdm/.config"
-
-# 创建 monitors.xml 文件，并写入完整配置文件，包含需要的屏幕旋转和缩放修改。
-cat <<EOF > "/var/lib/gdm/.config/monitors.xml"
-<monitors version="2">
-  <configuration>
-    <layoutmode>logical</layoutmode>
-    <logicalmonitor>
-      <x>0</x>
-      <y>0</y>
-      <scale>2</scale>
-      <primary>yes</primary>
-      <transform>
-        <rotation>right</rotation>
-        <flipped>no</flipped>
-      </transform>
-      <monitor>
-        <monitorspec>
-          <connector>DSI-1</connector>
-          <vendor>unknown</vendor>
-          <product>unknown</product>
-          <serial>unknown</serial>
-        </monitorspec>
-        <mode>
-          <width>1600</width>
-          <height>2560</height>
-          <rate>120.000</rate>
-        </mode>
-      </monitor>
-    </logicalmonitor>
-  </configuration>
-</monitors>
-EOF
-# 为配置文件及其父目录设置正确的所有权以让 GDM 读取配置。
-chown -R gdm:gdm "/var/lib/gdm/.config"
-echo 'GDM monitor configuration created and permissions set.'
-# --------------------------------------------------------------------------
-
-
-
-# ==========================================================================
-# --- 可选：配置 Fcitx5 输入法 ---
-# ==========================================================================
-# 1. 配置环境变量
-# 这是确保所有 GTK 和 Qt 应用程序能够正确调用 Fcitx5 输入法的关键步骤。
-# 通过 /etc/environment 文件来为所有用户会话设置这些变量。
-echo 'Configuring system-wide environment variables for Fcitx5...'
-cat <<EOF > "/etc/environment"
-XMODIFIERS=@im=fcitx
-GTK_IM_MODULE=fcitx
-QT_IM_MODULE=fcitx
-EOF
-echo 'Fcitx5 environment variables configured in /etc/environment.'
-
-# 2. 配置图形界面自启动
-# 根据 XDG Autostart 规范，
-# 将 .desktop 文件链接到系统级的自启动目录中，
-# 这样即使用户更新 fcitx5 软件包，自启动项也会指向最新的文件。
-echo 'Configuring Fcitx5 to autostart for all users...'
-mkdir -p "/etc/xdg/autostart"
-ln -s "/usr/share/applications/org.fcitx.Fcitx5.desktop" "/etc/xdg/autostart/org.fcitx.Fcitx5.desktop"
-echo 'Fcitx5 autostart configured via system-wide symlink.'
 # --------------------------------------------------------------------------
 
 
@@ -482,22 +287,9 @@ echo 'First-boot services created and enabled.'
 
 
 
-# ==========================================================================
-# --- 自定义 /etc/os-release ---
-# ==========================================================================
-echo 'Setting /etc/os-release...'
-# ${BUILD_VERSION} 是从主脚本中导入的。
-sed -i "s/^PRETTY_NAME=.*/PRETTY_NAME=\"Fedora for Nabu ${BUILD_VERSION}\"/" "/etc/os-release"
-
-# 添加创建者签名
-echo 'BUILD_CREATOR="jhuang6451"' >> "/etc/os-release"
-echo '/etc/os-release customized.'
-# --------------------------------------------------------------------------
-
-
 
 # ===========================================================================================
-# --- 可选/暂时：临时后配置 ---
+# --- 暂时：临时后配置 ---
 # ===========================================================================================
 # Because interactive post-install script won't work,
 # We need to set up a user.
