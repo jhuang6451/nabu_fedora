@@ -37,7 +37,8 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 * [x] Complete installation tutorial docs.
 * [x] Fix some known bugs.
 * [x] Dualboot optimization.
-* [ ] Kernel update test.
+* [ ] Use rpm packages to distribute core configuration files.
+* [ ] Builds with other DEs.
 
 ## Bugs
 You tell me.
