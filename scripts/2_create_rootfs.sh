@@ -138,7 +138,6 @@ dnf install -y --releasever=$RELEASEVER \
     --setopt=install_weak_deps=False \
     --exclude dracut-config-rescue \
     @hardware-support \
-    systemd-boot-unsigned \
     systemd-ukify \
     xiaomi-nabu-firmware \
     xiaomi-nabu-audio \
@@ -226,7 +225,7 @@ dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     nabu-fedora-configs-extra \
-    nabu-fedora-configs-branding \
+    nabu-fedora-configs-gnome \
     nabu-fedora-dualboot-efi
 # --------------------------------------------------------------------------
 
