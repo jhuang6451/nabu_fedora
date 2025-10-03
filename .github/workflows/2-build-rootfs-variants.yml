@@ -69,9 +69,9 @@ jobs:
             echo "::warning::No '2-create-rootfs-*.sh' scripts found. Nothing to build."
           fi
 
-          # 使用 jq 安全地生成 JSON 数组
+          # 使用 jq 的 compact 模式生成单行 JSON 数组
           if [ ${#final_variants[@]} -gt 0 ]; then
-            matrix=$(printf "%s\n" "${final_variants[@]}" | jq -R . | jq -s .)
+            matrix=$(printf "%s\n" "${final_variants[@]}" | jq -R . | jq -sc .)
           else
             matrix='[]'
           fi
