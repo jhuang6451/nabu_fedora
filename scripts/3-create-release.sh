@@ -56,7 +56,7 @@ if [ -z "$EFI_ZIP_SOURCE" ]; then
 fi
 
 echo "INFO: Found EFI artifact at ${EFI_ZIP_SOURCE}"
-EFI_RELEASE_NAME="nabu-fedora-efi-${BUILD_VERSION}.zip"
+EFI_RELEASE_NAME="efi-files-${BUILD_VERSION}.zip"
 cp "${EFI_ZIP_SOURCE}" "${EFI_RELEASE_NAME}"
 ASSETS_TO_UPLOAD+=("${EFI_RELEASE_NAME}")
 echo "INFO: Added '${EFI_RELEASE_NAME}' to upload list."
