@@ -14,12 +14,17 @@ on:
           - all
           - gnome
           - kde
+      build_version: # 自定义的输入字段名称
+        description: '请输入要构建的版本号'
+        required: true
+        default: '42.3'
+        type: string
 
 permissions:
   contents: write
 
 env:
-  BUILD_VERSION: "42.2"
+  BUILD_VERSION: ${{ github.event.inputs.build_version }}
 
 jobs:
   # 这个 Job 会扫描 scripts 目录，再根据选择动态生成构建矩阵

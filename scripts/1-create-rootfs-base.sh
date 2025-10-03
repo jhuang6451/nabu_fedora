@@ -18,7 +18,7 @@ RELEASEVER="42"
 ARCH="aarch64"
 
 # 发行版本号从 Workflow 获取
-BUILD_VERSION="${BUILD_VERSION:-42.2}"
+BUILD_VERSION="${BUILD_VERSION}"
 
 # Mount chroot filesystems 函数
 mount_chroot_fs() {

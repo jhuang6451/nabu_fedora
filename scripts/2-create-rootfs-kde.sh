@@ -23,7 +23,8 @@ VARIANT_NAME="kde"
 ROOTFS_DIR="$PWD/fedora-rootfs-$VARIANT_NAME"
 RELEASEVER="42"
 ARCH="aarch64"
-ROOTFS_NAME="fedora-${RELEASEVER}-nabu-rootfs-${VARIANT_NAME}.img"
+BUILD_VERSION="${BUILD_VERSION}"
+ROOTFS_NAME="fedora-${BUILD_VERSION}-nabu-rootfs-${VARIANT_NAME}.img"
 IMG_SIZE="8G"
 
 # 1. 从基础 rootfs 复制

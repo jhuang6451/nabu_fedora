@@ -25,7 +25,7 @@ fi
 
 # --- 配置变量 ---
 echo "INFO: Reading configuration from environment variables..."
-BUILD_VERSION="${BUILD_VERSION:-42.2}"
+BUILD_VERSION="${BUILD_VERSION}"
 
 # --- 路径定义 ---
 ARTIFACTS_DIR="artifacts"
