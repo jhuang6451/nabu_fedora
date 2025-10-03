@@ -15,7 +15,7 @@ on:
           - gnome
           - kde
       build_version: # 自定义的输入字段名称
-        description: '请输入要构建的版本号'
+        description: 'Input the build version, e.g., 42.3' # 输入字段的描述
         required: true
         default: '42.3'
         type: string
