@@ -126,6 +126,7 @@ dnf install -y --releasever=$RELEASEVER \
     pd-mapper \
     tqftpserv \
     q6voiced \
+    upower \
     NetworkManager-wifi \
     glibc-langpack-en \
     nabu-fedora-configs-core

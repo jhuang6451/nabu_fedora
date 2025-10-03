@@ -76,11 +76,13 @@ for ROOTFS_PATH in "${ROOTFS_IMAGES[@]}"; do
     echo "=================================================================="
     echo "INFO: Processing image: ${ROOTFS_PATH}"
 
-    ROOTFS_COMPRESSED_PATH="${ROOTFS_PATH}.xz"
+    ROOTFS_COMPRESSED_PATH="${ROOTFS_PATH}.zst"
 
-    # 压缩镜像
-    echo "INFO: Compressing '${ROOTFS_PATH}' using xz..."
-    xz -T0 -v "${ROOTFS_PATH}"
+    # 使用 zstd 进行压缩
+    echo "INFO: Compressing '${ROOTFS_PATH}' using zstd..."
+    # -T0 使用所有可用线程，-v 显示进度。zstd 会自动创建 .zst 文件并删除源文件
+    zstd -T0 -v "${ROOTFS_PATH}"
+
     ASSETS_TO_UPLOAD+=("${ROOTFS_COMPRESSED_PATH}")
     echo "INFO: Added '${ROOTFS_COMPRESSED_PATH}' to upload list."
 
@@ -107,8 +109,8 @@ COMMIT_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your/r
 ASSET_NOTES=""
 for ASSET in "${ASSETS_TO_UPLOAD[@]}"; do
     FILENAME=$(basename "${ASSET}")
-    if [[ "${FILENAME}" == *.img.xz ]]; then
-        ASSET_NOTES="${ASSET_NOTES}- \\\`${FILENAME}\\\` - The compressed rootfs image. Decompress before use.
+    if [[ "${FILENAME}" == *.img.zst ]]; then
+        ASSET_NOTES="${ASSET_NOTES}- \\\`${FILENAME}\\\` - The compressed rootfs image. Decompress with \`unzstd\` or \`zstd -d\`.
 "
     elif [[ "${FILENAME}" == *.zip ]]; then
         ASSET_NOTES="${ASSET_NOTES}- \\\`${FILENAME}\\\` - Contains the bootloader and kernel (UKI). Unzip and copy to your ESP partition. This is compatible with all rootfs variants in this release.
