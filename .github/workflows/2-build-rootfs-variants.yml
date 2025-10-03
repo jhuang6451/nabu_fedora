@@ -99,6 +99,12 @@ jobs:
         with:
           name: base-rootfs-archive
           path: base-rootfs.tar.gz
+      
+      - name: Upload EFI Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: efi-artifact
+          path: efi-files.zip
 
   build-variants:
     # 等待基础构建和矩阵生成都完成

@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # ==============================================================================
-# 2_create_release.sh
+# 3-create-release.sh
 #
 # 功能:
-#   1. 自动查找所有构建变体的 rootfs 镜像。
-#   2. 为每个镜像提取 EFI 文件并打包成 zip。
+#   1. 查找预先打包好的 EFI 文件压缩包。
+#   2. 自动查找所有构建变体的 rootfs 镜像。
 #   3. 使用 xz 对每个镜像进行高效压缩。
 #   4. 创建一个包含所有资产的 GitHub Release。
 #
 # 作者: jhuang6451
-# 版本: 2.0
+# 版本: 2.1
 # ==============================================================================
 
 set -e
@@ -37,7 +37,7 @@ ASSETS_TO_UPLOAD=()
 cleanup() {
     echo "INFO: Performing cleanup..."
     # 卸载所有可能的挂载点
-    grep "$PWD/tmp_mount_" /proc/mounts | awk '{print $2}' | xargs -r sudo umount -l
+    grep "$PWD/tmp_mount_" /proc/mounts | awk \'{print $2}\' | xargs -r sudo umount -l
     rm -rf tmp_mount_* tmp_efi_*
     echo "INFO: Cleanup complete."
 }
@@ -45,60 +45,38 @@ trap cleanup EXIT
 
 # --- 脚本主逻辑 ---
 
-# 1. 查找所有下载的 rootfs 镜像文件
+# 1. 查找并准备 EFI 文件
+echo "INFO: Searching for EFI artifact..."
+EFI_ZIP_SOURCE=$(find "${ARTIFACTS_DIR}" -type f -name "efi-files.zip")
+
+if [ -z "$EFI_ZIP_SOURCE" ]; then
+    echo "ERROR: efi-files.zip not found in artifacts!" >&2
+    ls -R "${ARTIFACTS_DIR}"
+    exit 1
+fi
+
+echo "INFO: Found EFI artifact at ${EFI_ZIP_SOURCE}"
+EFI_RELEASE_NAME="nabu-fedora-efi-${BUILD_VERSION}.zip"
+cp "${EFI_ZIP_SOURCE}" "${EFI_RELEASE_NAME}"
+ASSETS_TO_UPLOAD+=("${EFI_RELEASE_NAME}")
+echo "INFO: Added '${EFI_RELEASE_NAME}' to upload list."
+
+# 2. 查找所有下载的 rootfs 镜像文件
 echo "INFO: Searching for rootfs image artifacts in '${ARTIFACTS_DIR}'..."
 ROOTFS_IMAGES=($(find "${ARTIFACTS_DIR}" -type f -name "*.img"))
 
 if [ ${#ROOTFS_IMAGES[@]} -eq 0 ]; then
-    echo "ERROR: No rootfs artifact (*.img) found in '${ARTIFACTS_DIR}'!" >&2
-    echo "--- Listing contents of ARTIFACTS_DIR --- "
-    ls -R "${ARTIFACTS_DIR}"
-    echo "---------------------------------------"
-    exit 1
+    echo "WARNING: No rootfs artifact (*.img) found in '${ARTIFACTS_DIR}'. Release will only contain EFI files."
 fi
 
 echo "INFO: Found ${#ROOTFS_IMAGES[@]} rootfs image(s) to process."
 
-# 2. 循环处理每个找到的镜像
+# 3. 循环处理每个找到的镜像
 for ROOTFS_PATH in "${ROOTFS_IMAGES[@]}"; do
     echo "=================================================================="
     echo "INFO: Processing image: ${ROOTFS_PATH}"
 
-    # 提取变体名称 (e.g., gnome, kde)
-    VARIANT_NAME=$(basename "${ROOTFS_PATH}" .img | sed -e 's/.*-//g')
-    if [ -z "${VARIANT_NAME}" ]; then
-        echo "WARNING: Could not determine variant name from '${ROOTFS_PATH}'. Skipping."
-        continue
-    fi
-    echo "INFO: Detected variant: ${VARIANT_NAME}"
-
-    # 定义此变体相关的文件名
-    EFI_ZIP_NAME="efi-files-${VARIANT_NAME}.zip"
     ROOTFS_COMPRESSED_PATH="${ROOTFS_PATH}.xz"
-
-    # 为此变体创建唯一的临时目录
-    ROOTFS_MNT_POINT=$(mktemp -d tmp_mount_XXXXXX)
-    EFI_EXTRACT_DIR=$(mktemp -d tmp_efi_XXXXXX)
-
-    # 挂载、提取、打包
-    echo "INFO: Mounting rootfs image to extract EFI files..."
-    mount -o loop,ro "${ROOTFS_PATH}" "${ROOTFS_MNT_POINT}"
-
-    ROOTFS_EFI_CONTENT="${ROOTFS_MNT_POINT}/boot/efi/"
-    if [ ! -d "${ROOTFS_EFI_CONTENT}" ] || [ -z "$(ls -A "${ROOTFS_EFI_CONTENT}")" ]; then
-        echo "ERROR: EFI content in '${ROOTFS_PATH}' is empty or missing." >&2
-        umount "${ROOTFS_MNT_POINT}"
-        continue
-    fi
-
-    echo "INFO: Copying EFI content to temporary directory..."
-    rsync -a "${ROOTFS_EFI_CONTENT}" "${EFI_EXTRACT_DIR}/"
-    umount "${ROOTFS_MNT_POINT}"
-
-    echo "INFO: Creating '${EFI_ZIP_NAME}'..."
-    (cd "${EFI_EXTRACT_DIR}" && zip -r "$OLDPWD/${EFI_ZIP_NAME}" .)
-    ASSETS_TO_UPLOAD+=("${EFI_ZIP_NAME}")
-    echo "INFO: Added '${EFI_ZIP_NAME}' to upload list."
 
     # 压缩镜像
     echo "INFO: Compressing '${ROOTFS_PATH}' using xz..."
@@ -108,13 +86,13 @@ for ROOTFS_PATH in "${ROOTFS_IMAGES[@]}"; do
 
 done
 
-# 3. 检查是否有可上传的资产
+# 4. 检查是否有可上传的资产
 if [ ${#ASSETS_TO_UPLOAD[@]} -eq 0 ]; then
     echo "ERROR: No assets were generated for upload. Exiting." >&2
     exit 1
 fi
 
-# 4. 准备并创建 Release
+# 5. 准备并创建 Release
 TAG="test-$(date +'%Y%m%d-%H%M')"
 RELEASE_TITLE="Fedora for Nabu Test-$(date +'%Y%m%d-%H%M')"
 
@@ -130,9 +108,11 @@ ASSET_NOTES=""
 for ASSET in "${ASSETS_TO_UPLOAD[@]}"; do
     FILENAME=$(basename "${ASSET}")
     if [[ "${FILENAME}" == *.img.xz ]]; then
-        ASSET_NOTES+="- \`${FILENAME}\` - The compressed rootfs image. Decompress before use.\n"
+        ASSET_NOTES="${ASSET_NOTES}- \\\`${FILENAME}\\\` - The compressed rootfs image. Decompress before use.
+"
     elif [[ "${FILENAME}" == *.zip ]]; then
-        ASSET_NOTES+="- \`${FILENAME}\` - Contains the bootloader and kernel (UKI). Unzip and copy to your ESP partition.\n"
+        ASSET_NOTES="${ASSET_NOTES}- \\\`${FILENAME}\\\` - Contains the bootloader and kernel (UKI). Unzip and copy to your ESP partition. This is compatible with all rootfs variants in this release.
+"
     fi
 done
 
@@ -151,7 +131,7 @@ This build is based on commit: [${GITHUB_SHA:0:7}](${COMMIT_URL})
 EOF
 )
 
-# 5. 创建 Release 并上传所有资产
+# 6. 创建 Release 并上传所有资产
 echo "INFO: Creating GitHub release '${TAG}' with ${#ASSETS_TO_UPLOAD[@]} assets..."
 
 gh release create "$TAG" \

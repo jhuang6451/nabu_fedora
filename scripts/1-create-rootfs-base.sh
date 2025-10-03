@@ -220,6 +220,17 @@ umount_chroot_fs
 trap - EXIT
 sync
 
+# 6. Package EFI files
+echo "Packaging EFI files..."
+EFI_DIR="$ROOTFS_DIR/boot/efi"
+if [ -d "$EFI_DIR" ] && [ -n "$(ls -A "$EFI_DIR")" ]; then
+    PROJECT_ROOT="$PWD"
+    (cd "$EFI_DIR" && zip -r "$PROJECT_ROOT/efi-files.zip" .)
+    echo "EFI files packaged into efi-files.zip"
+else
+    echo "WARNING: EFI directory is empty or does not exist. Skipping EFI packaging."
+fi
+
 echo "=============================================================================="
 echo "Base rootfs created successfully at: $ROOTFS_DIR"
 echo "This directory can now be used as a base for creating specific variants."
