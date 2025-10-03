@@ -76,7 +76,6 @@ dnf install -y \
     --exclude google-droid-sans-fonts \
     --exclude google-noto-serif-fonts \
     --exclude google-noto-sans-mono-vf-fonts \
-    --exclude google-noto-serif-vf-fonts \
     --exclude qt5-qtwebkit \
     --exclude kwebkitpart \
     @kde-desktop \
@@ -87,7 +86,7 @@ dnf install -y \
     fcitx5-qt \
     fcitx5-chinese-addons \
     glibc-langpack-zh
-
+# Can't remove google-noto-serif-vf-fonts because vlc-plugins-base needs it.
 
 # echo "Installing KDE-specific config packages..."
 # dnf install -y --releasever=$RELEASEVER \
