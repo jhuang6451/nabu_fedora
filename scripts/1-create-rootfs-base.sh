@@ -117,7 +117,7 @@ dnf install -y --releasever=$RELEASEVER \
     --setopt=install_weak_deps=False \
     --exclude dracut-config-rescue \
     @hardware-support \
-    systemd-ukify \ 
+    systemd-ukify \
     xiaomi-nabu-firmware \
     xiaomi-nabu-audio \
     binutils \
