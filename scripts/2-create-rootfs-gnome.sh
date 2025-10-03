@@ -50,43 +50,39 @@ trap umount_chroot_fs EXIT
 echo "Mounting filesystems for chroot..."
 mount_chroot_fs
 
-# 3. 在 Chroot 环境中安装 GNOME 软件包
+# 3. 在 Chroot 环境中安装 GNOME 等软件包以及配置
 echo "Installing GNOME desktop environment inside chroot..."
 chroot "$ROOTFS_DIR" /bin/bash <<CHROOT_SCRIPT
 set -e
 
-# echo "Installing GNOME desktop and additional packages..."
-# dnf install -y \
-#     --releasever=$RELEASEVER \
-#     --nogpgcheck \
-#     --setopt=install_weak_deps=False \
-#     --exclude gnome-boxes \
-#     --exclude gnome-connections \
-#     --exclude yelp \
-#     --exclude gnome-classic-session \
-#     --exclude gnome-maps \
-#     --exclude gnome-user-docs \
-#     --exclude gnome-weather \
-#     --exclude simple-scan \
-#     --exclude snapshot \
-#     --exclude gnome-tour \
-#     --exclude malcontent-control \
-#     @standard \
-#     @base-graphical \
-#     @gnome-desktop \
-#     firefox \
-#     fcitx5 \
-#     fcitx5-configtool \
-#     fcitx5-gtk \
-#     fcitx5-qt \
-#     fcitx5-chinese-addons \
-#     glibc-langpack-zh
-
-echo "Installing GNOME-specific config packages..."
-dnf install -y --releasever=$RELEASEVER \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
+echo "Installing GNOME desktop and additional packages..."
+dnf install -y \
+    --releasever=$RELEASEVER \
     --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    --exclude gnome-boxes \
+    --exclude gnome-connections \
+    --exclude yelp \
+    --exclude gnome-classic-session \
+    --exclude gnome-maps \
+    --exclude gnome-user-docs \
+    --exclude gnome-weather \
+    --exclude simple-scan \
+    --exclude snapshot \
+    --exclude gnome-tour \
+    --exclude malcontent-control \
+    @standard \
+    @base-graphical \
+    @gnome-desktop \
+    firefox \
+    fcitx5 \
+    fcitx5-configtool \
+    fcitx5-gtk \
+    fcitx5-qt \
+    fcitx5-chinese-addons \
+    glibc-langpack-zh \
     nabu-fedora-configs-gnome
+    
 
 echo "Cleaning dnf cache..."
 dnf clean all
