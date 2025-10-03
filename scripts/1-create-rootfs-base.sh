@@ -119,7 +119,6 @@ dnf install -y --releasever=$RELEASEVER \
     @hardware-support \
     systemd-ukify \
     xiaomi-nabu-firmware \
-    xiaomi-nabu-audio \
     binutils \
     qrtr \
     rmtfs \
