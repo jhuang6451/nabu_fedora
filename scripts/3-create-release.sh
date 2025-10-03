@@ -137,7 +137,6 @@ echo "INFO: Creating GitHub release '${TAG}' with ${#ASSETS_TO_UPLOAD[@]} assets
 gh release create "$TAG" \
     --title "$RELEASE_TITLE" \
     --notes "$RELEASE_NOTES" \
-    --latest \
     --prerelease \
     "${ASSETS_TO_UPLOAD[@]}"
 
