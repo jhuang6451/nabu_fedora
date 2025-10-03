@@ -6,7 +6,7 @@ on:
       variant:
         description: 'Select the variant to build. "all" will build all available variants.'
         required: true
-        default: 'gnome'
+        default: 'all'
         type: choice
         # 注意: 这个列表需要手动维护，以在UI上提供选项。
         # 但执行逻辑会自动扫描脚本，所以即使这里忘记添加，选择 'all' 也能正确构建。
