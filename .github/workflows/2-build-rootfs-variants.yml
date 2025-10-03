@@ -74,7 +74,7 @@ jobs:
   build-base:
     runs-on: ubuntu-24.04-arm
     container:
-      image: ${{ env.CONTAINER_IMAGE }}
+      image: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
       options: --privileged
     outputs:
       base_rootfs_path: ${{ steps.set_path.outputs.base_rootfs_path }}
@@ -108,7 +108,7 @@ jobs:
     if: fromJson(needs.prepare-matrix.outputs.matrix)[0] != null
     runs-on: ubuntu-24.04-arm
     container:
-      image: ${{ env.CONTAINER_IMAGE }}
+      image: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
       options: --privileged
     strategy:
       fail-fast: false
@@ -147,7 +147,7 @@ jobs:
     # 仅当上一步成功（或被跳过但结果是success）时运行
     if: needs.build-variants.result == 'success' || needs.build-variants.result == 'skipped'
     container:
-      image: ${{ env.CONTAINER_IMAGE }}
+      image: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
       options: --privileged
     permissions:
       contents: write
