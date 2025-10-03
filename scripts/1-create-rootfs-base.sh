@@ -112,7 +112,7 @@ dnf install -y --releasever=$RELEASEVER \
 echo 'Installing basic packages...'
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     --exclude dracut-config-rescue \
@@ -131,19 +131,18 @@ dnf install -y --releasever=$RELEASEVER \
 
 
 
-# # ==========================================================================
-# # --- 安装额外软件包和配置 ---
-# # ==========================================================================
-# echo 'Installing extra packages...'
-# dnf install -y --releasever=$RELEASEVER \
-#     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
-#     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
-#     --nogpgcheck \
-#     zram-generator \
-#     qbootctl \
-#     NetworkManager-tui \
-#     nabu-fedora-configs-extra \
-#     nabu-fedora-dualboot-efi
+# ==========================================================================
+# --- 安装额外软件包和配置 ---
+# ==========================================================================
+echo 'Installing extra packages...'
+dnf install -y --releasever=$RELEASEVER \
+    --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --nogpgcheck \
+    zram-generator \
+    qbootctl \
+    NetworkManager-tui \
+    nabu-fedora-configs-extra \
 
 
 
@@ -199,7 +198,6 @@ SUDOERS_FILE="/etc/sudoers.d/99-wheel-user"
 echo '%wheel ALL=(ALL) ALL' > "$SUDOERS_FILE"
 chmod 0440 "$SUDOERS_FILE"
 echo "Sudo access for group 'wheel' has been configured."
-
 
 
 
