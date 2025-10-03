@@ -151,7 +151,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rootfs-artifact-${{ matrix.variant }}
-          path: ./*-${{ matrix.variant }}.img
+          path: fedora-${{ env.BUILD_VERSION }}-nabu-rootfs-${{ matrix.variant }}.img
 
   create-release:
     runs-on: ubuntu-24.04-arm
@@ -173,6 +173,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+
+      # 调试步骤
+      - name: Display structure of downloaded artifacts
+        run: ls -R artifacts
 
       - name: Create Release and Upload Assets
         run: |
