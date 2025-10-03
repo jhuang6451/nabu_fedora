@@ -131,7 +131,6 @@ dnf install -y --releasever=$RELEASEVER \
 # systemd-boot-unsigned会提供生成UKI所需的linuxaarch64.efi.stub。
 echo 'Installing basic packages...'
 dnf install -y --releasever=$RELEASEVER \
-    --repofrompath="jhuang6451-copr-old,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
@@ -148,8 +147,6 @@ dnf install -y --releasever=$RELEASEVER \
     pd-mapper \
     tqftpserv \
     NetworkManager-wifi \
-    zram-generator \
-    qbootctl \
     glibc-langpack-en \
     nabu-fedora-configs-core
 # Note:
@@ -204,6 +201,8 @@ dnf install -y \
     --exclude malcontent-control \
     @standard \
     @base-graphical \
+    zram-generator \
+    qbootctl \
     @gnome-desktop \
     firefox \
     NetworkManager-tui \
@@ -220,7 +219,6 @@ dnf install -y \
 # ==========================================================================
 echo "Installing additional config packages..."
 dnf install -y --releasever=$RELEASEVER \
-    --repofrompath="jhuang6451-copr-old,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
