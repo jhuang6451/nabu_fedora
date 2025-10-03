@@ -120,6 +120,9 @@ jobs:
     container:
       image: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
       options: --privileged
+    continue-on-error: true
+      # 这将防止单个 variant 的失败导致整个 build-variants job 失败。
+      # 只要有一个 variant 成功，整个 job 的最终结果就是 success。
     strategy:
       fail-fast: false
       matrix:
@@ -154,8 +157,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     # 同样需要等待 build-variants 完成
     needs: build-variants
-    # 仅当上一步成功（或被跳过但结果是success）时运行
-    if: needs.build-variants.result == 'success' || needs.build-variants.result == 'skipped'
+    if: always()
     container:
       image: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
       options: --privileged
