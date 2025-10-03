@@ -37,7 +37,7 @@ ASSETS_TO_UPLOAD=()
 cleanup() {
     echo "INFO: Performing cleanup..."
     # 卸载所有可能的挂载点
-    grep "$PWD/tmp_mount_" /proc/mounts | awk \'{print $2}\' | xargs -r sudo umount -l
+    grep "$PWD/tmp_mount_" /proc/mounts | awk '{print $2}' | xargs -r sudo umount -l
     rm -rf tmp_mount_* tmp_efi_*
     echo "INFO: Cleanup complete."
 }
@@ -138,6 +138,7 @@ gh release create "$TAG" \
     --title "$RELEASE_TITLE" \
     --notes "$RELEASE_NOTES" \
     --latest \
+    --prerelease \
     "${ASSETS_TO_UPLOAD[@]}"
 
 echo "SUCCESS: Release ${TAG} created successfully with all assets."
