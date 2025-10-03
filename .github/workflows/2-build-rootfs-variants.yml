@@ -1,0 +1,172 @@
+name: '2. Build Rootfs Variants'
+
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: 'Select the variant to build. "all" will build all available variants.'
+        required: true
+        default: 'gnome'
+        type: choice
+        # 注意: 这个列表需要手动维护，以在UI上提供选项。
+        # 但执行逻辑会自动扫描脚本，所以即使这里忘记添加，选择 'all' 也能正确构建。
+        options:
+          - all
+          - gnome
+          - kde
+
+permissions:
+  contents: write
+
+env:
+  BUILD_VERSION: "42.2"
+
+jobs:
+  # 这个 Job 会扫描 scripts 目录，再根据选择动态生成构建矩阵
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate_matrix.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate build matrix
+        id: generate_matrix
+        run: |
+          AVAILABLE_VARIANTS=()
+          echo "Scanning for available variants in ./scripts directory..."
+          for f in ./scripts/2-create-rootfs-*.sh; do
+            # 检查文件是否存在，防止没有匹配项时出现错误
+            if [ -e "$f" ]; then
+              # 从文件名提取版本
+              variant=$(basename "$f" .sh | sed 's/2-create-rootfs-//')
+              AVAILABLE_VARIANTS+=("$variant")
+            fi
+          done
+
+          echo "Available variants found: ${AVAILABLE_VARIANTS[@]}"
+          USER_CHOICE="${{ github.event.inputs.variant }}"
+          echo "User selected: $USER_CHOICE"
+
+          FINAL_MATRIX_JSON='[]'
+          if [ ${#AVAILABLE_VARIANTS[@]} -gt 0 ]; then
+            if [ "$USER_CHOICE" == "all" ]; then
+              # 选择 'all', 构建所有找到的版本
+              FINAL_MATRIX_JSON=$(printf "'%s'," "${AVAILABLE_VARIANTS[@]}" | sed 's/,$//' | awk '{print "[\""$0"\"]"}' | sed "s/,/\",\"/g")
+            else
+              # 选择特定版本, 检查该版本脚本是否存在
+              if [[ " ${AVAILABLE_VARIANTS[*]} " =~ " ${USER_CHOICE} " ]]; then
+                FINAL_MATRIX_JSON='["${{ github.event.inputs.variant }}"]'
+              else
+                echo "::error::Selected variant '${USER_CHOICE}' does not have a corresponding script file. Build cannot proceed."
+                exit 1
+              fi
+            fi
+          else
+            echo "::warning::No '2-create-rootfs-*.sh' scripts found. Nothing to build."
+          fi
+          
+          echo "Generated Matrix: $FINAL_MATRIX_JSON"
+          echo "matrix=$FINAL_MATRIX_JSON" >> $GITHUB_OUTPUT
+
+  build-base:
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
+      options: --privileged
+    outputs:
+      base_rootfs_path: ${{ steps.set_path.outputs.base_rootfs_path }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create Base aarch64 rootfs
+        run: |
+          chmod +x ./scripts/1-create-rootfs-base.sh
+          ./scripts/1-create-rootfs-base.sh
+
+      - name: Set base_rootfs_path output
+        id: set_path
+        run: echo "base_rootfs_path=fedora-rootfs-base" >> $GITHUB_OUTPUT
+
+      - name: Package Base Rootfs
+        run: |
+          tar -czf base-rootfs.tar.gz fedora-rootfs-base
+      
+      - name: Upload Base Rootfs Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: base-rootfs-archive
+          path: base-rootfs.tar.gz
+
+  build-variants:
+    # 等待基础构建和矩阵生成都完成
+    needs: [build-base, prepare-matrix]
+    # 仅当矩阵不为空时才运行
+    if: fromJson(needs.prepare-matrix.outputs.matrix)[0] != null
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
+      options: --privileged
+    strategy:
+      fail-fast: false
+      matrix:
+        # 从 prepare-matrix job 的输出动态加载矩阵
+        variant: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Base Rootfs Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: base-rootfs-archive
+          path: .
+
+      - name: Extract Base Rootfs
+        run: |
+          tar -xzf base-rootfs.tar.gz
+
+      - name: Build Rootfs Variant (${{ matrix.variant }})
+        run: |
+          chmod +x ./scripts/2-create-rootfs-${{ matrix.variant }}.sh
+          ./scripts/2-create-rootfs-${{ matrix.variant }}.sh ${{ needs.build-base.outputs.base_rootfs_path }}
+
+      - name: Upload Rootfs Image Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rootfs-artifact-${{ matrix.variant }}
+          path: ./*-${{ matrix.variant }}.img
+
+  create-release:
+    runs-on: ubuntu-24.04-arm
+    # 同样需要等待 build-variants 完成
+    needs: build-variants
+    # 仅当上一步成功（或被跳过但结果是success）时运行
+    if: needs.build-variants.result == 'success' || needs.build-variants.result == 'skipped'
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
+      options: --privileged
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release and Upload Assets
+        run: |
+          # 检查 artifacts 目录是否为空，防止在没有构建任何东西时创建空 Release
+          if [ -z "$(ls -A artifacts)" ]; then
+            echo "No artifacts found to release. Skipping."
+            exit 0
+          fi
+          chmod +x ./scripts/3-create-release.sh
+          ./scripts/3-create-release.sh
