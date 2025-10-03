@@ -142,7 +142,7 @@ dnf install -y --releasever=$RELEASEVER \
     zram-generator \
     qbootctl \
     NetworkManager-tui \
-    nabu-fedora-configs-extra \
+    nabu-fedora-configs-extra
 
 
 
