@@ -56,14 +56,29 @@ chroot "$ROOTFS_DIR" /bin/bash <<CHROOT_SCRIPT
 set -e
 
 echo "Installing KDE Plasma desktop and additional packages..."
-# TODO: 确认并替换为官方的 KDE Plasma 软件包组和所需的附加包
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
-    @kde-desktop-environment \
-    konsole \
-    dolphin \
+    --exclude PackageKit-command-not-found \
+    --exclude PackageKit \
+    --exclude plasma-nm-l2tp \
+    --exclude NetworkManager-l2tp \
+    --exclude xl2tpd \
+    --exclude glibc-all-langpacks \
+    --exclude kdebugsettings \
+    --exclude khelpcenter \
+    --exclude akonadi-server \
+    --exclude akonadi-server-mysql \
+    --exclude plasma-print-manager \
+    --exclude plasma-desktop-doc \
+    --exclude google-droid-sans-fonts \
+    --exclude google-noto-serif-fonts \
+    --exclude google-noto-sans-mono-vf-fonts \
+    --exclude google-noto-serif-vf-fonts \
+    --exclude qt5-qtwebkit \
+    --exclude kwebkitpart \
+    @kde-desktop \
     firefox \
     fcitx5 \
     fcitx5-configtool \
@@ -75,7 +90,8 @@ dnf install -y \
 
 # echo "Installing KDE-specific config packages..."
 # dnf install -y --releasever=$RELEASEVER \
-#     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+#     --setopt=install_weak_deps=False \
+#     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
 #     --nogpgcheck \
 #     nabu-fedora-configs-kde # 假设未来会有这个包
 
