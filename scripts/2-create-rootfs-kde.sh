@@ -13,8 +13,7 @@ set -e
 
 # 检查是否提供了基础 rootfs 目录
 if [ -z "$1" ]; then
-    echo "错误: 请提供基础 rootfs 目录的路径。" >&2
-    echo "用法: $0 <path-to-base-rootfs-dir>" >&2
+    echo "错误: 基础 rootfs 目录的路径未提供。" >&2
     exit 1
 fi
 
