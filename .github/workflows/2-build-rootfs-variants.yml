@@ -42,9 +42,7 @@ jobs:
           AVAILABLE_VARIANTS=()
           echo "Scanning for available variants in ./scripts directory..."
           for f in ./scripts/2-create-rootfs-*.sh; do
-            # 检查文件是否存在，防止没有匹配项时出现错误
             if [ -e "$f" ]; then
-              # 从文件名提取版本
               variant=$(basename "$f" .sh | sed 's/2-create-rootfs-//')
               AVAILABLE_VARIANTS+=("$variant")
             fi
@@ -54,15 +52,14 @@ jobs:
           USER_CHOICE="${{ github.event.inputs.variant }}"
           echo "User selected: $USER_CHOICE"
 
-          FINAL_MATRIX_JSON='[]'
+          # 将要构建的变体存入 final_variants 数组
+          final_variants=()
           if [ ${#AVAILABLE_VARIANTS[@]} -gt 0 ]; then
             if [ "$USER_CHOICE" == "all" ]; then
-              # 选择 'all', 构建所有找到的版本
-              FINAL_MATRIX_JSON=$(printf "'%s'," "${AVAILABLE_VARIANTS[@]}" | sed 's/,$//' | awk '{print "[\""$0"\"]"}' | sed "s/,/\",\"/g")
+              final_variants=("${AVAILABLE_VARIANTS[@]}")
             else
-              # 选择特定版本, 检查该版本脚本是否存在
               if [[ " ${AVAILABLE_VARIANTS[*]} " =~ " ${USER_CHOICE} " ]]; then
-                FINAL_MATRIX_JSON='["${{ github.event.inputs.variant }}"]'
+                final_variants=("$USER_CHOICE")
               else
                 echo "::error::Selected variant '${USER_CHOICE}' does not have a corresponding script file. Build cannot proceed."
                 exit 1
@@ -71,9 +68,16 @@ jobs:
           else
             echo "::warning::No '2-create-rootfs-*.sh' scripts found. Nothing to build."
           fi
-          
-          echo "Generated Matrix: $FINAL_MATRIX_JSON"
-          echo "matrix=$FINAL_MATRIX_JSON" >> $GITHUB_OUTPUT
+
+          # 使用 jq 安全地生成 JSON 数组
+          if [ ${#final_variants[@]} -gt 0 ]; then
+            matrix=$(printf "%s\n" "${final_variants[@]}" | jq -R . | jq -s .)
+          else
+            matrix='[]'
+          fi
+
+          echo "Generated Matrix: $matrix"
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   build-base:
     runs-on: ubuntu-24.04-arm
