@@ -6,7 +6,7 @@
 # 功能:
 #   1. 查找预先打包好的 EFI 文件压缩包。
 #   2. 自动查找所有构建变体的 rootfs 镜像。
-#   3. 使用 xz 对每个镜像进行高效压缩。
+#   3. 使用 zstd 对每个镜像进行高效压缩。
 #   4. 创建一个包含所有资产的 GitHub Release。
 #
 # 作者: jhuang6451
@@ -37,7 +37,7 @@ ASSETS_TO_UPLOAD=()
 cleanup() {
     echo "INFO: Performing cleanup..."
     # 卸载所有可能的挂载点
-    grep "$PWD/tmp_mount_" /proc/mounts | awk '{print $2}' | xargs -r sudo umount -l
+    grep "$PWD/tmp_mount_" /proc/mounts | awk '{print $2}' | xargs -r sudo umount -l || true
     rm -rf tmp_mount_* tmp_efi_*
     echo "INFO: Cleanup complete."
 }
