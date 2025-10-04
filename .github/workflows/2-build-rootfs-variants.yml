@@ -101,13 +101,13 @@ jobs:
 
       - name: Package Base Rootfs
         run: |
-          tar -czf base-rootfs.tar.gz fedora-rootfs-base
+          tar -I zstd -cf base-rootfs.tar.zst fedora-rootfs-base
       
       - name: Upload Base Rootfs Artifact
         uses: actions/upload-artifact@v4
         with:
           name: base-rootfs-archive
-          path: base-rootfs.tar.gz
+          path: base-rootfs.tar.zst
       
       - name: Upload EFI Artifact
         uses: actions/upload-artifact@v4
@@ -144,7 +144,7 @@ jobs:
 
       - name: Extract Base Rootfs
         run: |
-          tar -xzf base-rootfs.tar.gz
+          tar -xf base-rootfs.tar.zst
 
       - name: Build Rootfs Variant (${{ matrix.variant }})
         run: |
