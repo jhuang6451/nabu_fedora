@@ -238,10 +238,15 @@ echo "Packaging EFI files..."
 EFI_DIR="$ROOTFS_DIR/boot/efi"
 if [ -d "$EFI_DIR" ] && [ -n "$(ls -A "$EFI_DIR")" ]; then
     PROJECT_ROOT="$PWD"
+    echo "Found EFI files to package:"
+    ls -lR "$EFI_DIR"
     (cd "$EFI_DIR" && zip -r "$PROJECT_ROOT/efi-files.zip" .)
     echo "EFI files packaged into efi-files.zip"
 else
-    echo "WARNING: EFI directory is empty or does not exist. Skipping EFI packaging."
+    echo "ERROR: EFI directory '$EFI_DIR' is empty or does not exist." >&2
+    echo "Listing contents of '$ROOTFS_DIR/boot' for debugging:" >&2
+    ls -lR "$ROOTFS_DIR/boot" || echo "Directory '$ROOTFS_DIR/boot' not found." >&2
+    exit 1
 fi
 
 echo "=============================================================================="
