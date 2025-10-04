@@ -129,6 +129,8 @@ dnf install -y --releasever=$RELEASEVER \
     upower \
     NetworkManager-wifi \
     glibc-langpack-en \
+    glibc-langpack-zh \
+    glibc-langpack-ru \
     nabu-fedora-configs-core
 
 

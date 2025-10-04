@@ -81,18 +81,19 @@ dnf install -y \
     firefox \
     fcitx5 \
     fcitx5-configtool \
+    kcm-fcitx5 \
     fcitx5-gtk \
     fcitx5-qt \
     fcitx5-chinese-addons \
-    glibc-langpack-zh
+    google-noto-sans-sc-fonts
 # Can't remove google-noto-serif-vf-fonts & google-noto-sans-mono-vf-fonts because vlc-plugins-base needs it.
 
-# echo "Installing KDE-specific config packages..."
-# dnf install -y --releasever=$RELEASEVER \
-#     --setopt=install_weak_deps=False \
-#     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
-#     --nogpgcheck \
-#     nabu-fedora-configs-kde # 假设未来会有这个包
+echo "Installing KDE-specific config packages..."
+dnf install -y --releasever=$RELEASEVER \
+    --setopt=install_weak_deps=False \
+    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
+    --nogpgcheck \
+    nabu-fedora-configs-kde
 
 echo "Cleaning dnf cache..."
 dnf clean all

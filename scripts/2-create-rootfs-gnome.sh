@@ -82,9 +82,7 @@ dnf install -y \
     fcitx5-gtk \
     fcitx5-qt \
     fcitx5-chinese-addons \
-    glibc-langpack-zh \
     nabu-fedora-configs-gnome
-    
 
 echo "Cleaning dnf cache..."
 dnf clean all
