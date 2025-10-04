@@ -126,12 +126,11 @@ dnf install -y --releasever=$RELEASEVER \
     pd-mapper \
     tqftpserv \
     q6voiced \
-    upower \
     NetworkManager-wifi \
     glibc-langpack-en \
-    glibc-langpack-zh \
-    glibc-langpack-ru \
+    qbootctl \
     nabu-fedora-configs-core
+# systemd-boot-unsigned provides efi stub.
 
 
 
@@ -144,9 +143,10 @@ dnf install -y --releasever=$RELEASEVER \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
-    qbootctl \
     NetworkManager-tui \
-    nabu-fedora-configs-extra
+    glibc-langpack-zh \
+    glibc-langpack-ru \
+    vim
 
 
 

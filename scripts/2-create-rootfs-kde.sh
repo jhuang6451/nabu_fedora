@@ -56,13 +56,22 @@ echo "Installing KDE Plasma desktop environment inside chroot..."
 chroot "$ROOTFS_DIR" /bin/bash <<CHROOT_SCRIPT
 set -e
 
+# 补充一些缺失的依赖
+echo "Installing additional dependencies..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    alsa-utils \
+    pipewire \
+    wireplumber \
+    upower
+
 echo "Installing KDE Plasma desktop and additional packages..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
-    --exclude PackageKit-command-not-found \
-    --exclude PackageKit \
     --exclude plasma-nm-l2tp \
     --exclude NetworkManager-l2tp \
     --exclude xl2tpd \
