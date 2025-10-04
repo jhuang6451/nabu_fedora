@@ -153,8 +153,8 @@ dnf install -y --releasever=$RELEASEVER \
 # --- 配置 Copr ---
 # ==========================================================================
 echo "Configuring Copr repositories..."
-dnf copr enable jhuang6451/nabu_fedora_packages
-dnf copr enable onesaladleaf/pocketblue
+dnf copr enable -y jhuang6451/nabu_fedora_packages
+dnf copr enable -y onesaladleaf/pocketblue
 
 
 # ==========================================================================
