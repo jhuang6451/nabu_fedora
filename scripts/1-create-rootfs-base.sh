@@ -112,7 +112,7 @@ dnf install -y --releasever=$RELEASEVER \
 echo 'Installing basic packages...'
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     --exclude dracut-config-rescue \
@@ -140,7 +140,6 @@ dnf install -y --releasever=$RELEASEVER \
 echo 'Installing extra packages...'
 dnf install -y --releasever=$RELEASEVER \
     --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
-    --repofrompath="jhuang6451-copr-old,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
@@ -154,7 +153,6 @@ dnf install -y --releasever=$RELEASEVER \
 # --- 配置 Copr ---
 # ==========================================================================
 echo "Configuring Copr repositories..."
-dnf copr enable jhuang6451/nabu_fedora_packages_uefi
 dnf copr enable jhuang6451/nabu_fedora_packages
 dnf copr enable onesaladleaf/pocketblue
 
@@ -164,7 +162,7 @@ dnf copr enable onesaladleaf/pocketblue
 # ==========================================================================
 echo "Installing kernel package to trigger UKI generation..."
 dnf install -y --releasever=$RELEASEVER \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     kernel-sm8150

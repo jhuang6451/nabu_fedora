@@ -100,7 +100,6 @@ dnf install -y \
 echo "Installing KDE-specific config packages..."
 dnf install -y --releasever=$RELEASEVER \
     --setopt=install_weak_deps=False \
-    --repofrompath="jhuang6451-copr-old,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_uefi/fedora-$RELEASEVER-$ARCH/" \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     nabu-fedora-configs-kde
