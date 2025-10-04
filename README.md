@@ -86,6 +86,8 @@ Steps:
         adb shell 'umount /esp'
         ```
 
+        * ***If you see error message after `adb shell 'umount /esp'`, ignore it.***
+
 4. Install DBKP via adb sideload:
     * On your tablet, go back to the home screem of TWRP.
     * Tap on `Advanced` -> Tap on `ADB Sideload` -> Swipe the bar on the screen.
@@ -104,6 +106,7 @@ Steps:
         ```
 
     * Wait for the process to complete, then reboot your tablet, you should see the UEFI interface.
+        * ***Make sure to reboot with `fastboot reboot` rather than force rebooting with power bottom, or it might break the filesystem!!!***
     * You can choose between boot options with volume bottom, and confirm with power bottom.
 
 > [!NOTE]
