@@ -150,6 +150,14 @@ dnf install -y --releasever=$RELEASEVER \
     vim
 
 
+# ==========================================================================
+# --- 配置 Copr ---
+# ==========================================================================
+echo "Configuring Copr repositories..."
+dnf copr enable jhuang6451/nabu_fedora_packages_uefi
+dnf copr enable jhuang6451/nabu_fedora_packages
+dnf copr enable onesaladleaf/pocketblue
+
 
 # ==========================================================================
 # --- 安装内核 ---
