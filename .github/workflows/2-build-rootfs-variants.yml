@@ -14,12 +14,17 @@ on:
           - all
           - gnome
           - kde
+      build_version: # 自定义的输入字段名称
+        description: 'Input the build version, e.g., 42.3' # 输入字段的描述
+        required: true
+        default: '42.3'
+        type: string
 
 permissions:
   contents: write
 
 env:
-  BUILD_VERSION: "42.2"
+  BUILD_VERSION: ${{ github.event.inputs.build_version }}
 
 jobs:
   # 这个 Job 会扫描 scripts 目录，再根据选择动态生成构建矩阵
@@ -37,9 +42,7 @@ jobs:
           AVAILABLE_VARIANTS=()
           echo "Scanning for available variants in ./scripts directory..."
           for f in ./scripts/2-create-rootfs-*.sh; do
-            # 检查文件是否存在，防止没有匹配项时出现错误
             if [ -e "$f" ]; then
-              # 从文件名提取版本
               variant=$(basename "$f" .sh | sed 's/2-create-rootfs-//')
               AVAILABLE_VARIANTS+=("$variant")
             fi
@@ -49,15 +52,14 @@ jobs:
           USER_CHOICE="${{ github.event.inputs.variant }}"
           echo "User selected: $USER_CHOICE"
 
-          FINAL_MATRIX_JSON='[]'
+          # 将要构建的变体存入 final_variants 数组
+          final_variants=()
           if [ ${#AVAILABLE_VARIANTS[@]} -gt 0 ]; then
             if [ "$USER_CHOICE" == "all" ]; then
-              # 选择 'all', 构建所有找到的版本
-              FINAL_MATRIX_JSON=$(printf "'%s'," "${AVAILABLE_VARIANTS[@]}" | sed 's/,$//' | awk '{print "[\""$0"\"]"}' | sed "s/,/\",\"/g")
+              final_variants=("${AVAILABLE_VARIANTS[@]}")
             else
-              # 选择特定版本, 检查该版本脚本是否存在
               if [[ " ${AVAILABLE_VARIANTS[*]} " =~ " ${USER_CHOICE} " ]]; then
-                FINAL_MATRIX_JSON='["${{ github.event.inputs.variant }}"]'
+                final_variants=("$USER_CHOICE")
               else
                 echo "::error::Selected variant '${USER_CHOICE}' does not have a corresponding script file. Build cannot proceed."
                 exit 1
@@ -66,9 +68,16 @@ jobs:
           else
             echo "::warning::No '2-create-rootfs-*.sh' scripts found. Nothing to build."
           fi
-          
-          echo "Generated Matrix: $FINAL_MATRIX_JSON"
-          echo "matrix=$FINAL_MATRIX_JSON" >> $GITHUB_OUTPUT
+
+          # 使用 jq 的 compact 模式生成单行 JSON 数组
+          if [ ${#final_variants[@]} -gt 0 ]; then
+            matrix=$(printf "%s\n" "${final_variants[@]}" | jq -R . | jq -sc .)
+          else
+            matrix='[]'
+          fi
+
+          echo "Generated Matrix: $matrix"
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   build-base:
     runs-on: ubuntu-24.04-arm
@@ -92,13 +101,19 @@ jobs:
 
       - name: Package Base Rootfs
         run: |
-          tar -czf base-rootfs.tar.gz fedora-rootfs-base
+          tar -I zstd -cf base-rootfs.tar.zst fedora-rootfs-base
       
       - name: Upload Base Rootfs Artifact
         uses: actions/upload-artifact@v4
         with:
           name: base-rootfs-archive
-          path: base-rootfs.tar.gz
+          path: base-rootfs.tar.zst
+      
+      - name: Upload EFI Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: efi-artifact
+          path: efi-files.zip
 
   build-variants:
     # 等待基础构建和矩阵生成都完成
@@ -109,6 +124,9 @@ jobs:
     container:
       image: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
       options: --privileged
+    continue-on-error: true
+      # 这将防止单个 variant 的失败导致整个 build-variants job 失败。
+      # 只要有一个 variant 成功，整个 job 的最终结果就是 success。
     strategy:
       fail-fast: false
       matrix:
@@ -126,7 +144,7 @@ jobs:
 
       - name: Extract Base Rootfs
         run: |
-          tar -xzf base-rootfs.tar.gz
+          tar -xf base-rootfs.tar.zst
 
       - name: Build Rootfs Variant (${{ matrix.variant }})
         run: |
@@ -137,14 +155,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rootfs-artifact-${{ matrix.variant }}
-          path: ./*-${{ matrix.variant }}.img
+          path: fedora-${{ env.BUILD_VERSION }}-nabu-rootfs-${{ matrix.variant }}.img
 
   create-release:
     runs-on: ubuntu-24.04-arm
     # 同样需要等待 build-variants 完成
     needs: build-variants
-    # 仅当上一步成功（或被跳过但结果是success）时运行
-    if: needs.build-variants.result == 'success' || needs.build-variants.result == 'skipped'
+    if: always()
     container:
       image: ghcr.io/${{ github.repository_owner }}/fedora-nabu-builder:42
       options: --privileged
@@ -160,6 +177,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+
+      # 调试步骤
+      - name: Display structure of downloaded artifacts
+        run: ls -R artifacts
 
       - name: Create Release and Upload Assets
         run: |
