@@ -168,7 +168,7 @@ dnf install -y --releasever=$RELEASEVER \
     kernel-sm8150
 
 echo "Verifying UKI Generation..."
-if [ -d "/boot/efi/EFI/Linux" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
+if [ -d "/boot/efi/EFI/fedora" ] && [ -n "$(find /boot/efi/EFI/Linux -name '*.efi')" ]; then
     echo "SUCCESS: UKI file(s) found!"
     ls -lR /boot/efi/
 else
