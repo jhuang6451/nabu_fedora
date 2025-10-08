@@ -87,6 +87,24 @@ Steps:
         ```
 
         * ***If you see error message after `adb shell 'umount /esp'`, ignore it.***
+        * ***After this, your esp partition should look like this:***
+
+            ```Shell
+            .
+            `-- EFI
+                |-- Android
+                |   `-- Reboot2Android.efi
+                |-- BOOT
+                |   |-- bootaa64.efi
+                |   |-- drivers_aa64
+                |   |-- fbaa64.efi
+                |   |-- icons
+                |   |-- refind.conf
+                |   |-- themes
+                |   `-- vars
+                `-- fedora
+                    `-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-x.xx.x-x.sm8150.fc42.aarch64.efi
+            ```
 
 4. Install DBKP via adb sideload:
     * On your tablet, go back to the home screem of TWRP.
