@@ -106,7 +106,7 @@ Steps:
                 |   |-- themes
                 |   `-- vars
                 `-- fedora
-                    `-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-x.xx.x-x.sm8150.fc42.aarch64.efi
+                    `-- fedora-x.xx.x-x.sm8150.fc42.aarch64.efi
             ```
 
 4. Install DBKP via adb sideload:
