@@ -85,7 +85,7 @@ Steps:
         ```Shell
         adb shell 'umount /esp'
         adb shell 'mount /dev/block/sda31 /esp'
-        adb push path/to/unzipped/efi-file/* /esp/
+        adb push path/to/unzipped/efi-file/EFI /esp/
         adb shell 'umount /esp'
         ```
 
