@@ -41,7 +41,7 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 * [x] Dualboot optimization.
 * [x] Release config files via Copr.
 * [x] KDE variant.
-* [] Niri variant.
+* [ ] Niri variant.
 
 ## Bugs
 You tell me.
