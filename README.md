@@ -8,7 +8,7 @@ A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image 
 > The initial username is `user` and the password is `fedora`.
 
 > [!TIP]
-> Most updates will be released via [Copr](https://copr.fedorainfracloud.org/coprs/jhuang6451/nabu_fedora_packages/).
+> Most updates will be released via [Copr](https://copr.fedorainfracloud.org/coprs/jhuang6451/nabu_fedora_packages/). Check for them with `dnf upgrade`!
 
 ## Disclaimer
 
