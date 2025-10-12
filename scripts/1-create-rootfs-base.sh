@@ -3,11 +3,12 @@
 # ==============================================================================
 # 1-create-rootfs-base.sh
 #
-# 功能: 为 nabu 构建一个基础的 fedora 根文件系统，包含核心软件包和内核。
-#      此脚本的产物是一个 rootfs 目录，供后续脚本添加桌面环境。
+# 功能: 
+#   1. 为 nabu 构建一个基础的 fedora 根文件系统，包含核心软件包和内核。
+#   2. 打包 efi 文件并制作esp分区镜像。
 #
 # 作者: jhuang6451
-# 版本: 2.0
+# 版本: 2.1
 # ==============================================================================
 
 set -e
@@ -233,7 +234,7 @@ umount_chroot_fs
 trap - EXIT
 sync
 
-# 6. Package EFI files
+# 6. 打包 EFI 文件
 echo "Packaging EFI files..."
 EFI_DIR="$ROOTFS_DIR/boot/efi"
 if [ -d "$EFI_DIR" ] && [ -n "$(ls -A "$EFI_DIR")" ]; then
@@ -242,12 +243,35 @@ if [ -d "$EFI_DIR" ] && [ -n "$(ls -A "$EFI_DIR")" ]; then
     ls -lR "$EFI_DIR"
     (cd "$EFI_DIR" && zip -r "$PROJECT_ROOT/efi-files.zip" .)
     echo "EFI files packaged into efi-files.zip"
+
+#  7. 创建可刷写的 ESP 镜像 ---
+    echo "Creating flashable ESP image (esp.img)..."
+    ESP_IMAGE="$PROJECT_ROOT/esp.img"
+    ESP_SIZE="350M"
+    TEMP_MOUNT=$(mktemp -d)
+
+    # 创建空镜像并挂载
+    truncate -s "$ESP_SIZE" "$ESP_IMAGE"
+    mkfs.vfat -F 32 -n "ESPNABU" "$ESP_IMAGE"
+    mount -o loop "$ESP_IMAGE" "$TEMP_MOUNT"
+
+    # 写入EFI文件
+    cp -r "$EFI_DIR"/* "$TEMP_MOUNT/"
+    sync
+    
+    # 卸载镜像
+    umount "$TEMP_MOUNT"
+    rm -rf "$TEMP_MOUNT"
+
+    echo "Flashable ESP image created successfully at: $ESP_IMAGE"
+
 else
     echo "ERROR: EFI directory '$EFI_DIR' is empty or does not exist." >&2
     echo "Listing contents of '$ROOTFS_DIR/boot' for debugging:" >&2
     ls -lR "$ROOTFS_DIR/boot" || echo "Directory '$ROOTFS_DIR/boot' not found." >&2
     exit 1
 fi
+
 
 echo "=============================================================================="
 echo "Base rootfs created successfully at: $ROOTFS_DIR"
