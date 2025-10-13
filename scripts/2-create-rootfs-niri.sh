@@ -63,6 +63,7 @@ dnf install -y \
     --setopt=install_weak_deps=False \
     --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --repofrompath="niri-copr,https://download.copr.fedorainfracloud.org/results/yalter/niri/fedora-$RELEASEVER-$ARCH/" \
+    --exclude alacritty \
     @standard \
     @base-graphical \
     lightdm \
@@ -72,6 +73,9 @@ dnf install -y \
     mako \
     # swaybg \
     # swayidle \
+    # kitty \
+    # thunar \
+    # fastfetch \
     # firefox \
     # fcitx5 \
     # fcitx5-configtool \
