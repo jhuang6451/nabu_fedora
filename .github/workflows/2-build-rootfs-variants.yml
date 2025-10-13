@@ -14,6 +14,7 @@ on:
           - all
           - gnome
           - kde
+          - niri
       build_version: # 自定义的输入字段名称
         description: 'Input the build version, e.g., 42.3' # 输入字段的描述
         required: true
