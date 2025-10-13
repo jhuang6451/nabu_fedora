@@ -59,9 +59,9 @@ cp "${EFI_ZIP_SOURCE}" "${EFI_RELEASE_NAME}"
 ASSETS_TO_UPLOAD+=("${EFI_RELEASE_NAME}")
 echo "INFO: Added '${EFI_RELEASE_NAME}' to upload list."
 
-# 3. 查找所有 rootfs 镜像文件 (排除 esp.img)
-echo "INFO: Searching for rootfs image artifacts in '${ARTIFACTS_DIR}'..."
-ROOTFS_IMAGES=($(find "${ARTIFACTS_DIR}" -type f -name "*.img" ! -name "esp.img"))
+# 2. 查找并准备 ESP 镜像文件
+echo "INFO: Searching for ESP image artifact (esp.img)..."
+ESP_IMG_SOURCE=$(find "${ARTIFACTS_DIR}" -type f -name "esp.img")
 
 if [ -n "$ESP_IMG_SOURCE" ]; then
     echo "INFO: Found ESP image artifact at ${ESP_IMG_SOURCE}"
