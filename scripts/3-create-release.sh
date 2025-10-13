@@ -73,9 +73,10 @@ else
     echo "WARNING: esp.img not found in artifacts. It will not be included in the release."
 fi
 
-# 3. 查找所有下载的 rootfs 镜像文件
+# 3. 查找所有 rootfs 镜像文件 (排除 esp.img)
 echo "INFO: Searching for rootfs image artifacts in '${ARTIFACTS_DIR}'..."
-ROOTFS_IMAGES=($(find "${ARTIFACTS_DIR}" -type f -name "*.img"))
+# 从压缩列表中排除 ESP 镜像
+ROOTFS_IMAGES=($(find "${ARTIFACTS_DIR}" -type f -name "*.img" ! -name "esp.img"))
 
 if [ ${#ROOTFS_IMAGES[@]} -eq 0 ]; then
     echo "WARNING: No rootfs artifact (*.img) found in '${ARTIFACTS_DIR}'. Release will only contain EFI files."
