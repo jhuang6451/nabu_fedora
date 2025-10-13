@@ -70,14 +70,14 @@ dnf install -y \
     fuzzel \
     waybar \
     mako \
-    swaybg \
-    swayidle \
-    firefox \
-    fcitx5 \
-    fcitx5-configtool \
-    fcitx5-gtk \
-    fcitx5-qt \
-    fcitx5-chinese-addons \
+    # swaybg \
+    # swayidle \
+    # firefox \
+    # fcitx5 \
+    # fcitx5-configtool \
+    # fcitx5-gtk \
+    # fcitx5-qt \
+    # fcitx5-chinese-addons \
     # nabu-fedora-configs-niri
 
 echo "Configuring niri Copr repository..."
