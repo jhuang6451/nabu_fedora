@@ -110,11 +110,17 @@ jobs:
           name: base-rootfs-archive
           path: base-rootfs.tar.zst
       
-      - name: Upload EFI Artifact
+      - name: Upload EFI Files Artifact
         uses: actions/upload-artifact@v4
         with:
           name: efi-artifact
           path: efi-files.zip
+
+      - name: Upload ESP Image Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp-image
+          path: esp.img
 
   build-variants:
     # 等待基础构建和矩阵生成都完成
