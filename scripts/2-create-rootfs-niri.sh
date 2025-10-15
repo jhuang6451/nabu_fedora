@@ -86,6 +86,7 @@ dnf install -y \
     --repofrompath="niri,https://download.copr.fedorainfracloud.org/results/yalter/niri/fedora-$RELEASEVER-$ARCH/" \
     --exclude alacritty \
     --exclude swaybg \
+    --exclude swaylock \
     niri
 
 echo "Installing from solopasha/hyprland..."
