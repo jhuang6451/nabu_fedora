@@ -128,6 +128,7 @@ dnf install -y \
 echo "Configuring Copr repository..."
 dnf copr enable -y yalter/niri
 dnf copr enable -y solopasha/hyprland
+dnf copr enable -y jhuang6451/jhuang6451
 
 echo "Cleaning dnf cache..."
 dnf clean all
