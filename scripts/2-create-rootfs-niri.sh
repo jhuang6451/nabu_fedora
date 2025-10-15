@@ -103,7 +103,7 @@ dnf install -y \
     --setopt=install_weak_deps=False \
     swaylock-effects \
     e-thos-menu \
-    wvkbd
+    wvkbd \
     sddm-astronaut-theme \
     jetbrains-mono-nf \
     ubuntu-sans-nf \
