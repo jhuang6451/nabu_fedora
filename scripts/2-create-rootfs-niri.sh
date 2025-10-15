@@ -121,7 +121,6 @@ dnf install -y \
     fuzzel \
     mako \
     swayidle \
-    swaylock \
     kitty \
     thunar \
     fastfetch
