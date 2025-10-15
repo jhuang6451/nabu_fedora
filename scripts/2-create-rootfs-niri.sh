@@ -52,40 +52,82 @@ echo "Mounting filesystems for chroot..."
 mount_chroot_fs
 
 # 3. 在 Chroot 环境中安装特定软件包以及配置
-echo "Installing GNOME desktop environment inside chroot..."
+echo "Installing packages inside chroot..."
 chroot "$ROOTFS_DIR" /bin/bash <<CHROOT_SCRIPT
 set -e
 
-echo "Installing GNOME desktop and additional packages..."
+echo "Installing config files..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
-    --repofrompath="niri-copr,https://download.copr.fedorainfracloud.org/results/yalter/niri/fedora-$RELEASEVER-$ARCH/" \
-    --exclude alacritty \
+    --repofrompath="nabu-fedora-packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    nabu-fedora-configs-niri
+
+echo "Installing common experience packages..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
     @standard \
     @base-graphical \
-    lightdm \
-    niri \
-    fuzzel \
-    waybar \
-    mako \
-    # swaybg \
-    # swayidle \
-    # kitty \
-    # thunar \
-    # fastfetch \
-    # firefox \
-    # fcitx5 \
-    # fcitx5-configtool \
-    # fcitx5-gtk \
-    # fcitx5-qt \
-    # fcitx5-chinese-addons \
-    # nabu-fedora-configs-niri
+    firefox \
+    fcitx5 \
+    fcitx5-configtool \
+    fcitx5-gtk \
+    fcitx5-qt \
+    fcitx5-chinese-addons
 
-echo "Configuring niri Copr repository..."
+echo "Installing from yalter/niri..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    --repofrompath="niri,https://download.copr.fedorainfracloud.org/results/yalter/niri/fedora-$RELEASEVER-$ARCH/" \
+    --exclude alacritty \
+    --exclude swaybg \
+    niri
+
+echo "Installing from solopasha/hyprland..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    --repofrompath="hyprland,https://download.copr.fedorainfracloud.org/results/solopasha/hyprland/fedora-$RELEASEVER-$ARCH/" \
+    swww
+
+echo "Installing from jhuang6451/jhuang6451..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    swaylock-effects \
+    e-thos-menu \
+    wvkbd
+    sddm-astronaut-theme \
+    jetbrains-mono-nf \
+    ubuntu-sans-nf \
+    maple-mono-normal-nf
+
+
+echo "Installing other tools for niri..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    waybar \
+    fuzzel \
+    mako \
+    hyprpaper \
+    swayidle \
+    swaylock \
+    kitty \
+    thunar \
+    fastfetch
+
+echo "Configuring Copr repository..."
 dnf copr enable -y yalter/niri
+dnf copr enable -y solopasha/hyprland
 
 echo "Cleaning dnf cache..."
 dnf clean all

@@ -112,8 +112,8 @@ dnf install -y --releasever=$RELEASEVER \
 
 echo 'Installing basic packages...'
 dnf install -y --releasever=$RELEASEVER \
-    --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="pocketblue,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     --exclude dracut-config-rescue \
@@ -140,8 +140,8 @@ dnf install -y --releasever=$RELEASEVER \
 # ==========================================================================
 echo 'Installing extra packages...'
 dnf install -y --releasever=$RELEASEVER \
-    --repofrompath="onesaladleaf-copr,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="pocketblue,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     NetworkManager-tui \
@@ -156,14 +156,14 @@ dnf install -y --releasever=$RELEASEVER \
 echo "Configuring Copr repositories..."
 dnf copr enable -y jhuang6451/nabu_fedora_packages
 dnf copr enable -y onesaladleaf/pocketblue
-
+dnf copr enable -y jhuang6451/jhuang6451
 
 # ==========================================================================
 # --- 安装内核 ---
 # ==========================================================================
 echo "Installing kernel package to trigger UKI generation..."
 dnf install -y --releasever=$RELEASEVER \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     kernel-sm8150
@@ -194,7 +194,7 @@ echo "Systemd presets applied."
 # ==========================================================================
 echo 'Installing dualboot efi...'
 dnf install -y --releasever=$RELEASEVER \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     nabu-fedora-dualboot-efi

@@ -61,7 +61,7 @@ dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --exclude gnome-boxes \
     --exclude gnome-connections \
     --exclude yelp \
