@@ -78,6 +78,7 @@ dnf install -y \
     @standard \
     @base-graphical \
     chrony \
+    nautilus \
     firefox \
     fcitx5 \
     fcitx5-configtool \
@@ -130,7 +131,6 @@ dnf install -y \
     mako \
     swayidle \
     kitty \
-    thunar \
     fastfetch
 
 echo "Configuring Copr repository..."
