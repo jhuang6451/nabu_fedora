@@ -103,7 +103,7 @@ dnf install -y \
     --setopt=install_weak_deps=False \
     --repofrompath="hyprland,https://download.copr.fedorainfracloud.org/results/solopasha/hyprland/fedora-$RELEASEVER-$ARCH/" \
     swww \
-    hyprpaper
+    waypaper
 
 echo "Installing from jhuang6451/jhuang6451..."
 dnf install -y \
@@ -114,9 +114,11 @@ dnf install -y \
     e-thos-menu \
     wvkbd \
     sddm-astronaut-theme \
+    agave-nf \
+    maple-mono-normal-nf \
     jetbrains-mono-nf \
-    ubuntu-sans-nf \
-    maple-mono-normal-nf
+    ubuntu-sans-nf
+
 
 echo "Installing other tools for niri..."
 dnf install -y \
