@@ -133,8 +133,6 @@ dnf install -y --releasever=$RELEASEVER \
     nabu-fedora-configs-core
 # systemd-boot-unsigned provides efi stub.
 
-
-
 # ==========================================================================
 # --- 安装额外软件包和配置 ---
 # ==========================================================================
@@ -148,7 +146,6 @@ dnf install -y --releasever=$RELEASEVER \
     glibc-langpack-zh \
     glibc-langpack-ru \
     vim
-
 
 # ==========================================================================
 # --- 配置 Copr ---
@@ -177,18 +174,6 @@ else
     exit 1
 fi
 
-
-
-# ==========================================================================
-# --- 应用 Systemd Preset 设置 ---
-# ==========================================================================
-echo "Applying systemd presets..."
-systemctl preset-all
-systemctl set-default graphical.target
-echo "Systemd presets applied."
-
-
-
 # ==========================================================================
 # --- 安装双启动efi ---
 # ==========================================================================
@@ -199,27 +184,11 @@ dnf install -y --releasever=$RELEASEVER \
     --setopt=install_weak_deps=False \
     nabu-fedora-dualboot-efi
 
-
-
-# ==========================================================================
-# --- 创建临时用户 ---
-# ==========================================================================
-echo 'Adding temporary user "user" with sudo privileges...'
-useradd --create-home --groups wheel user
-echo 'user:fedora' | chpasswd
-SUDOERS_FILE="/etc/sudoers.d/99-wheel-user"
-echo '%wheel ALL=(ALL) ALL' > "$SUDOERS_FILE"
-chmod 0440 "$SUDOERS_FILE"
-echo "Sudo access for group 'wheel' has been configured."
-
-
-
 # ==========================================================================
 # --- 清理 DNF 缓存 ---
 # ==========================================================================
 echo 'Cleaning dnf cache...'
 dnf clean all
-
 
 
 CHROOT_SCRIPT
@@ -245,8 +214,8 @@ if [ -d "$EFI_DIR" ] && [ -n "$(ls -A "$EFI_DIR")" ]; then
     echo "EFI files packaged into efi-files.zip"
 
 #  7. 创建可刷写的 ESP 镜像 ---
-    echo "Creating flashable ESP image (esp.img)..."
-    ESP_IMAGE="$PROJECT_ROOT/esp.img"
+    echo "Creating flashable ESP image (flashable_esp.img)..."
+    ESP_IMAGE="$PROJECT_ROOT/flashable_esp.img"
     ESP_SIZE="350M"
     TEMP_MOUNT=$(mktemp -d)
 
@@ -264,6 +233,15 @@ if [ -d "$EFI_DIR" ] && [ -n "$(ls -A "$EFI_DIR")" ]; then
     rm -rf "$TEMP_MOUNT"
 
     echo "Flashable ESP image created successfully at: $ESP_IMAGE"
+
+    ESP_IMAGE_COMPRESSED="${ESP_IMAGE}.zst"
+
+    # 使用 zstd 进行压缩
+    echo "INFO: Compressing '${ESP_IMAGE}' using zstd..."
+    # -T0 使用所有可用线程，-v 显示进度
+    zstd -T0 -v "${ESP_IMAGE}"
+
+    echo "Flashable ESP image compressed"
 
 else
     echo "ERROR: EFI directory '$EFI_DIR' is empty or does not exist." >&2
