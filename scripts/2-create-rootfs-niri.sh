@@ -77,6 +77,9 @@ dnf install -y \
     --setopt=install_weak_deps=False \
     @standard \
     @base-graphical \
+    alsa-utils \
+    pulseaudio \
+    pulseaudio-utils \
     firefox \
     fcitx5 \
     fcitx5-configtool \
