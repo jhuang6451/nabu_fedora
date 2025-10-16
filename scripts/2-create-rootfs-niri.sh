@@ -70,13 +70,14 @@ dnf install -y \
     --repofrompath="nabu-fedora-packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     nabu-fedora-configs-niri
 
-echo "Installing common experience packages..."
+echo "Installing basic & experience packages..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     @standard \
     @base-graphical \
+    chrony \
     firefox \
     fcitx5 \
     fcitx5-configtool \
