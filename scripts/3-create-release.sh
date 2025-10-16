@@ -100,8 +100,8 @@ if [ ${#ASSETS_TO_UPLOAD[@]} -eq 0 ]; then
 fi
 
 # 6. 准备并创建 Release
-TAG="test-$(date +'%Y%m%d-%H%M')"
-RELEASE_TITLE="Fedora for Nabu Test-$(date +'%Y%m%d-%H%M')"
+TAG="release-$(date +'%Y%m%d-%H%M')"
+RELEASE_TITLE="Fedora for Nabu ${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
 
 CHANGELOG="* No changelog provided."
 if [ -f "docs/release-notes.md" ]; then
@@ -143,7 +143,7 @@ echo "INFO: Creating GitHub release '${TAG}' with ${#ASSETS_TO_UPLOAD[@]} assets
 gh release create "$TAG" \
     --title "$RELEASE_TITLE" \
     --notes "$RELEASE_NOTES" \
-    --prerelease \
+    --latest \
     "${ASSETS_TO_UPLOAD[@]}"
 
 echo "SUCCESS: Release ${TAG} created successfully with all assets."
