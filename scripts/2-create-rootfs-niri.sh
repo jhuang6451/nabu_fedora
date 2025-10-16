@@ -96,7 +96,7 @@ dnf install -y \
     --setopt=install_weak_deps=False \
     --repofrompath="hyprland,https://download.copr.fedorainfracloud.org/results/solopasha/hyprland/fedora-$RELEASEVER-$ARCH/" \
     swww \
-    hyprpaper
+    waypaper
 
 echo "Installing from jhuang6451/jhuang6451..."
 dnf install -y \
