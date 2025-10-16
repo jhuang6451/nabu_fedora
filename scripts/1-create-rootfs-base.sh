@@ -133,8 +133,6 @@ dnf install -y --releasever=$RELEASEVER \
     nabu-fedora-configs-core
 # systemd-boot-unsigned provides efi stub.
 
-
-
 # ==========================================================================
 # --- 安装额外软件包和配置 ---
 # ==========================================================================
@@ -148,7 +146,6 @@ dnf install -y --releasever=$RELEASEVER \
     glibc-langpack-zh \
     glibc-langpack-ru \
     vim
-
 
 # ==========================================================================
 # --- 配置 Copr ---
@@ -177,18 +174,6 @@ else
     exit 1
 fi
 
-
-
-# ==========================================================================
-# --- 应用 Systemd Preset 设置 ---
-# ==========================================================================
-echo "Applying systemd presets..."
-systemctl preset-all
-systemctl set-default graphical.target
-echo "Systemd presets applied."
-
-
-
 # ==========================================================================
 # --- 安装双启动efi ---
 # ==========================================================================
@@ -199,14 +184,11 @@ dnf install -y --releasever=$RELEASEVER \
     --setopt=install_weak_deps=False \
     nabu-fedora-dualboot-efi
 
-
-
 # ==========================================================================
 # --- 清理 DNF 缓存 ---
 # ==========================================================================
 echo 'Cleaning dnf cache...'
 dnf clean all
-
 
 
 CHROOT_SCRIPT

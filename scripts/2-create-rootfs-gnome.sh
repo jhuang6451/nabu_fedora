@@ -56,6 +56,9 @@ echo "Installing GNOME desktop environment inside chroot..."
 chroot "$ROOTFS_DIR" /bin/bash <<CHROOT_SCRIPT
 set -e
 
+# ==========================================================================
+# --- 安装软件包和配置 ---
+# ==========================================================================
 echo "Installing GNOME desktop and additional packages..."
 dnf install -y \
     --releasever=$RELEASEVER \
@@ -95,6 +98,17 @@ echo '%wheel ALL=(ALL) ALL' > "$SUDOERS_FILE"
 chmod 0440 "$SUDOERS_FILE"
 echo "Sudo access for group 'wheel' has been configured."
 
+# ==========================================================================
+# --- 应用 Systemd Preset 设置 ---
+# ==========================================================================
+echo "Applying systemd presets..."
+systemctl preset-all
+systemctl set-default graphical.target
+echo "Systemd presets applied."
+
+# ==========================================================================
+# --- 清理 DNF 缓存 ---
+# ==========================================================================
 echo "Cleaning dnf cache..."
 dnf clean all
 
