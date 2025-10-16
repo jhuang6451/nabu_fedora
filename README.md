@@ -42,6 +42,7 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 * [x] Release config files via Copr.
 * [x] KDE variant.
 * [ ] Niri variant.
+* [ ] Update kernel to 6.17.
 
 ## Bugs
 You tell me.
@@ -49,7 +50,10 @@ You tell me.
 ## Installation Tutorial (Dualboot Supportive)
 
 > [!NOTE]
-> Re-partitioning your device destroys android's userdata, make sure all important files are backed up!!
+> Re-partitioning your device wipes android's userdata, make sure all important files are backed up!!
+
+> [!NOTE]
+> For those who already have an esp partition with efi files, you can download `efi-files-xx.x.zip` from release and manually place needed efi files into esp partition.
 
 Requirements:
 
@@ -62,7 +66,7 @@ Steps:
 
 1. Preparation:
     * Make sure `android-tools` is installed on your PC, or download `platform-tools` from [Official Website](https://developer.android.com/tools/releases/platform-tools), then decompress and cd into it.
-    * Download and decompress both `efi-files.zip` and `fedora-42-nabu-rootfs.img.xz` from release.
+    * Download and decompress both esp image and desired rootfs image from release.
     * Download ArKT-7's modded TWRP for nabu from [here](https://github.com/ArKT-7/twrp_device_xiaomi_nabu/releases/tag/mod_linux).
     * Download dualboot kernel pacher from [here](https://github.com/rodriguezst/nabu-dualboot-img/releases) (If you don't know what secureboot is, just download the NOSB version).
 
@@ -78,60 +82,44 @@ Steps:
     * Wait until your tablet to boot into TWRP, then tap on the linux logo on the top right side of the screen.
     * Tap on `Partitioning` -> Enter the linux partition size -> Tap on `yes` -> Wait for partitioning to be done.
 
-3. Transferring efi file to your tablet's esp partition:
-    * Make sure your tablet is still in TWRP, and your tablet is still connected to PC.
-    * On your PC, run:
-
-        ```Shell
-        adb shell 'umount /esp'
-        adb shell 'mount /dev/block/sda31 /esp'
-        adb push path/to/unzipped/efi-file/EFI /esp/EFI/
-        adb shell 'umount /esp'
-        ```
-
-        * ***If you see error message after `adb shell 'umount /esp'`, ignore it.***
-        * ***After this, your esp partition should look like this:***
-
-            ```Shell
-            .
-            `-- EFI
-                |-- Android
-                |   `-- Reboot2Android.efi
-                |-- BOOT
-                |   |-- bootaa64.efi
-                |   |-- drivers_aa64
-                |   |-- fbaa64.efi
-                |   |-- icons
-                |   |-- refind.conf
-                |   |-- themes
-                |   `-- vars
-                `-- fedora
-                    `-- fedora-x.xx.x-x.sm8150.fc42.aarch64.efi
-            ```
-
-4. Install DBKP via adb sideload:
+3. Install DBKP via adb sideload:
     * On your tablet, go back to the home screem of TWRP.
     * Tap on `Advanced` -> Tap on `ADB Sideload` -> Swipe the bar on the screen.
-    * On your PC, run:
+    * On your PC, run `adb sideload` command:
 
         ```Shell
         adb sideload path/to/installer_bootmanager.zip
         ```
 
-5. Install the rootfs:
-    * Reboot your tablet into bootloader again.
-    * On your PC, run:
+4. Flash esp image:
+    * Reboot your tablet into bootloader.
+    * On your PC, use `fastboot` to flash esp image to `esp` partition:
 
         ```Shell
-        fastboot flash linux path/to/fedora-42-nabu-rootfs.img
+        fastboot flash esp path/to/esp-xx.x.img
         ```
 
-    * Wait for the process to complete, then reboot your tablet, you should see the UEFI interface.
+5. Flash rootfs image:
+    * Make sure your tablet is still in bootloader.
+    * On your PC, use `fastboot` to flash rootfs image to `linux` partition:
+
+        ```Shell
+        fastboot flash linux path/to/fedora-xx.x-nabu-variant-rootfs.img
+        ```
+
+    * Wait for the process to complete, then reboot your tablet:
+
+        ```Shell
+        fastboot reboot
+        ```
+
+        after a while (About 1 minute), you should see the tablet reboot into UEFI interface.
+
         * ***Make sure to reboot with `fastboot reboot` rather than force rebooting with power bottom, or it might break the filesystem!!!***
     * You can choose between boot options with volume bottom, and confirm with power bottom.
 
 > [!NOTE]
-> Make sure the rootfs is decompressed, it should end with `.img` rather than `,img.xz`.
+> Make sure the rootfs is decompressed.
 
 ## Support Groups
 

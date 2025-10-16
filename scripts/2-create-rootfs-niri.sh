@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # ==============================================================================
-# 2-create-rootfs-gnome.sh
+# 2-create-rootfs-niri.sh
 #
-# 功能: 在基础 rootfs 之上安装 GNOME 桌面环境，并打包成最终的镜像文件。
+# 功能: 在基础 rootfs 之上安装 niri 合成器，并打包成最终的镜像文件。
 #
 # 作者: jhuang6451
 # 版本: 2.0
@@ -19,14 +19,14 @@ fi
 
 # 定义变量
 BASE_ROOTFS_DIR="$1"
-VARIANT_NAME="gnome"
+VARIANT_NAME="niri"
 ROOTFS_DIR="$PWD/fedora-rootfs-$VARIANT_NAME"
 RELEASEVER="42"
 ARCH="aarch64"
 BUILD_VERSION="${BUILD_VERSION}"
 ROOTFS_NAME="fedora-${BUILD_VERSION}-nabu-rootfs-${VARIANT_NAME}.img"
 ROOTFS_COMPRESSED_NAME="${ROOTFS_NAME}.zst"
-IMG_SIZE="8G"
+IMG_SIZE="5G"
 
 SUDOERS_FILE="/etc/sudoers.d/99-wheel-user"
 
@@ -54,41 +54,89 @@ trap umount_chroot_fs EXIT
 echo "Mounting filesystems for chroot..."
 mount_chroot_fs
 
-# 3. 在 Chroot 环境中安装 GNOME 等软件包以及配置
-echo "Installing GNOME desktop environment inside chroot..."
+# 3. 在 Chroot 环境中安装特定软件包以及配置
+echo "Installing packages inside chroot..."
 chroot "$ROOTFS_DIR" /bin/bash <<CHROOT_SCRIPT
 set -e
 
 # ==========================================================================
 # --- 安装软件包和配置 ---
 # ==========================================================================
-echo "Installing GNOME desktop and additional packages..."
+echo "Installing config files..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
-    --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
-    --exclude gnome-boxes \
-    --exclude gnome-connections \
-    --exclude yelp \
-    --exclude gnome-classic-session \
-    --exclude gnome-maps \
-    --exclude gnome-user-docs \
-    --exclude gnome-weather \
-    --exclude simple-scan \
-    --exclude snapshot \
-    --exclude gnome-tour \
-    --exclude malcontent-control \
+    --repofrompath="nabu-fedora-packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    nabu-fedora-configs-niri
+
+echo "Installing basic & experience packages..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
     @standard \
     @base-graphical \
-    @gnome-desktop \
+    chrony \
     firefox \
     fcitx5 \
     fcitx5-configtool \
     fcitx5-gtk \
     fcitx5-qt \
-    fcitx5-chinese-addons \
-    nabu-fedora-configs-gnome
+    fcitx5-chinese-addons
+
+echo "Installing from yalter/niri..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    --repofrompath="niri,https://download.copr.fedorainfracloud.org/results/yalter/niri/fedora-$RELEASEVER-$ARCH/" \
+    --exclude alacritty \
+    --exclude swaybg \
+    --exclude swaylock \
+    niri
+
+echo "Installing from solopasha/hyprland..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    --repofrompath="hyprland,https://download.copr.fedorainfracloud.org/results/solopasha/hyprland/fedora-$RELEASEVER-$ARCH/" \
+    swww \
+    waypaper
+
+echo "Installing from jhuang6451/jhuang6451..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    swaylock-effects \
+    e-thos-menu \
+    wvkbd \
+    sddm-astronaut-theme \
+    agave-nf \
+    maple-mono-normal-nf \
+    jetbrains-mono-nf \
+    ubuntu-sans-nf
+
+
+echo "Installing other tools for niri..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    waybar \
+    fuzzel \
+    mako \
+    swayidle \
+    kitty \
+    thunar \
+    fastfetch
+
+echo "Configuring Copr repository..."
+dnf copr enable -y yalter/niri
+dnf copr enable -y solopasha/hyprland
+dnf copr enable -y jhuang6451/jhuang6451
 
 # ==========================================================================
 # --- 创建临时用户 ---
@@ -140,7 +188,7 @@ rmdir "$MOUNT_DIR"
 trap - EXIT
 sync
 
-# 6. 最小化 img 文件
+# 6. 最小化并压缩 img 文件
 echo "Minimizing the image file..."
 e2fsck -f -y "$ROOTFS_NAME" || true
 resize2fs -M "$ROOTFS_NAME"
@@ -161,11 +209,11 @@ NEW_SIZE_KB=$((MIN_SIZE_KB + SAFETY_MARGIN_KB))
 truncate -s "${NEW_SIZE_KB}K" "$ROOTFS_NAME"
 resize2fs "$ROOTFS_NAME"
 
-# 7. 压缩img 文件
+# 7. 压缩 img 文件
 echo "INFO: Compressing '${ROOTFS_NAME}' using zstd..."
 # -T0 使用所有可用线程，-v 显示进度
 zstd -T0 -v "${ROOTFS_NAME}"
 
 echo "=============================================================================="
-echo "Compressed GNOME rootfs image created successfully: $ROOTFS_COMPRESSED_NAME"
+echo "Compressed niri rootfs image created successfully: $ROOTFS_COMPRESSED_NAME"
 echo "=============================================================================="

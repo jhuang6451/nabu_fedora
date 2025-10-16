@@ -16,9 +16,9 @@ on:
           - kde
           - niri
       build_version: # 自定义的输入字段名称
-        description: 'Input the build version, e.g., 42.3' # 输入字段的描述
+        description: 'Input the build version, e.g., 42.4' # 输入字段的描述
         required: true
-        default: '42.3'
+        default: '42.4'
         type: string
 
 permissions:
@@ -110,11 +110,17 @@ jobs:
           name: base-rootfs-archive
           path: base-rootfs.tar.zst
       
-      - name: Upload EFI Artifact
+      - name: Upload EFI Files Artifact
         uses: actions/upload-artifact@v4
         with:
           name: efi-artifact
           path: efi-files.zip
+
+      - name: Upload ESP Image Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp-image
+          path: flashable_esp.img.zst
 
   build-variants:
     # 等待基础构建和矩阵生成都完成
@@ -156,7 +162,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rootfs-artifact-${{ matrix.variant }}
-          path: fedora-${{ env.BUILD_VERSION }}-nabu-rootfs-${{ matrix.variant }}.img
+          path: fedora-${{ env.BUILD_VERSION }}-nabu-rootfs-${{ matrix.variant }}.img.zst
 
   create-release:
     runs-on: ubuntu-24.04-arm

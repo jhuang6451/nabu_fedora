@@ -25,7 +25,10 @@ RELEASEVER="42"
 ARCH="aarch64"
 BUILD_VERSION="${BUILD_VERSION}"
 ROOTFS_NAME="fedora-${BUILD_VERSION}-nabu-rootfs-${VARIANT_NAME}.img"
+ROOTFS_COMPRESSED_NAME="${ROOTFS_NAME}.zst"
 IMG_SIZE="8G"
+
+SUDOERS_FILE="/etc/sudoers.d/99-wheel-user"
 
 # 1. 从基础 rootfs 复制
 echo "Creating $VARIANT_NAME rootfs from base..."
@@ -56,6 +59,9 @@ echo "Installing KDE Plasma desktop environment inside chroot..."
 chroot "$ROOTFS_DIR" /bin/bash <<CHROOT_SCRIPT
 set -e
 
+# ==========================================================================
+# --- 安装软件包和配置 ---
+# ==========================================================================
 # 补充一些缺失的依赖
 echo "Installing additional dependencies..."
 dnf install -y \
@@ -100,10 +106,32 @@ dnf install -y \
 echo "Installing KDE-specific config packages..."
 dnf install -y --releasever=$RELEASEVER \
     --setopt=install_weak_deps=False \
-    --repofrompath="jhuang6451-copr,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     nabu-fedora-configs-kde
 
+# ==========================================================================
+# --- 创建临时用户 ---
+# ==========================================================================
+echo 'Adding temporary user "user" with sudo privileges...'
+useradd --create-home --groups wheel user
+echo 'user:fedora' | chpasswd
+SUDOERS_FILE="/etc/sudoers.d/99-wheel-user"
+echo '%wheel ALL=(ALL) ALL' > "$SUDOERS_FILE"
+chmod 0440 "$SUDOERS_FILE"
+echo "Sudo access for group 'wheel' has been configured."
+
+# ==========================================================================
+# --- 应用 Systemd Preset 设置 ---
+# ==========================================================================
+echo "Applying systemd presets..."
+systemctl preset-all
+systemctl set-default graphical.target
+echo "Systemd presets applied."
+
+# ==========================================================================
+# --- 清理 DNF 缓存 ---
+# ==========================================================================
 echo "Cleaning dnf cache..."
 dnf clean all
 
@@ -132,7 +160,7 @@ rmdir "$MOUNT_DIR"
 trap - EXIT
 sync
 
-# 6. 最小化并压缩 img 文件
+# 6. 最小化 img 文件
 echo "Minimizing the image file..."
 e2fsck -f -y "$ROOTFS_NAME" || true
 resize2fs -M "$ROOTFS_NAME"
@@ -153,6 +181,11 @@ NEW_SIZE_KB=$((MIN_SIZE_KB + SAFETY_MARGIN_KB))
 truncate -s "${NEW_SIZE_KB}K" "$ROOTFS_NAME"
 resize2fs "$ROOTFS_NAME"
 
+# 7. 压缩img 文件
+echo "INFO: Compressing '${ROOTFS_NAME}' using zstd..."
+# -T0 使用所有可用线程，-v 显示进度
+zstd -T0 -v "${ROOTFS_NAME}"
+
 echo "=============================================================================="
-echo "KDE rootfs image created successfully: $ROOTFS_NAME"
+echo "Compressed KDE rootfs image created successfully: $ROOTFS_COMPRESSED_NAME"
 echo "=============================================================================="

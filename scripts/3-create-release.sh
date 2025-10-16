@@ -59,44 +59,37 @@ cp "${EFI_ZIP_SOURCE}" "${EFI_RELEASE_NAME}"
 ASSETS_TO_UPLOAD+=("${EFI_RELEASE_NAME}")
 echo "INFO: Added '${EFI_RELEASE_NAME}' to upload list."
 
-# 3. 查找所有 rootfs 镜像文件 (排除 esp.img)
-echo "INFO: Searching for rootfs image artifacts in '${ARTIFACTS_DIR}'..."
-ROOTFS_IMAGES=($(find "${ARTIFACTS_DIR}" -type f -name "*.img" ! -name "esp.img"))
+# 2. 查找并准备 ESP 镜像文件
+echo "INFO: Searching for ESP image artifact (flashable_esp.img.zst)..."
+ESP_IMG_SOURCE=$(find "${ARTIFACTS_DIR}" -type f -name "flashable_esp.img.zst")
 
 if [ -n "$ESP_IMG_SOURCE" ]; then
     echo "INFO: Found ESP image artifact at ${ESP_IMG_SOURCE}"
-    ESP_RELEASE_NAME="esp-${BUILD_VERSION}.img"
+    ESP_RELEASE_NAME="esp-${BUILD_VERSION}.img.zst"
     cp "${ESP_IMG_SOURCE}" "${ESP_RELEASE_NAME}"
     ASSETS_TO_UPLOAD+=("${ESP_RELEASE_NAME}")
     echo "INFO: Added '${ESP_RELEASE_NAME}' to upload list."
 else
-    echo "WARNING: esp.img not found in artifacts. It will not be included in the release."
+    echo "WARNING: flashable_esp.img.zst not found in artifacts. It will not be included in the release."
 fi
 
-# 3. 查找所有下载的 rootfs 镜像文件
+# 3. 查找所有 rootfs 镜像文件
 echo "INFO: Searching for rootfs image artifacts in '${ARTIFACTS_DIR}'..."
-ROOTFS_IMAGES=($(find "${ARTIFACTS_DIR}" -type f -name "*.img"))
+# 从压缩列表中排除 ESP 镜像
+ROOTFS_IMAGES=($(find "${ARTIFACTS_DIR}" -type f -name "*.img.zst" ! -name "flashable_esp.img.zst"))
 
 if [ ${#ROOTFS_IMAGES[@]} -eq 0 ]; then
-    echo "WARNING: No rootfs artifact (*.img) found in '${ARTIFACTS_DIR}'. Release will only contain EFI files."
+    echo "ERROR: No rootfs artifact (*.img.zst) found in '${ARTIFACTS_DIR}'."
+    exit 1
 fi
 
 echo "INFO: Found ${#ROOTFS_IMAGES[@]} rootfs image(s) to process."
 
 # 4. 循环处理每个 rootfs 镜像
 for ROOTFS_PATH in "${ROOTFS_IMAGES[@]}"; do
-    echo "=================================================================="
-    echo "INFO: Processing image: ${ROOTFS_PATH}"
 
-    ROOTFS_COMPRESSED_PATH="${ROOTFS_PATH}.zst"
-
-    # 使用 zstd 进行压缩
-    echo "INFO: Compressing '${ROOTFS_PATH}' using zstd..."
-    # -T0 使用所有可用线程，-v 显示进度
-    zstd -T0 -v "${ROOTFS_PATH}"
-
-    ASSETS_TO_UPLOAD+=("${ROOTFS_COMPRESSED_PATH}")
-    echo "INFO: Added '${ROOTFS_COMPRESSED_PATH}' to upload list."
+    ASSETS_TO_UPLOAD+=("${ROOTFS_PATH}")
+    echo "INFO: Added '${ROOTFS_PATH}' to upload list."
 
 done
 
@@ -121,13 +114,13 @@ COMMIT_URL="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-your/r
 ASSET_NOTES=""
 for ASSET in "${ASSETS_TO_UPLOAD[@]}"; do
     FILENAME=$(basename "${ASSET}")
-    if [[ "${FILENAME}" == *.img.zst ]]; then
+    if [[ "${FILENAME}" == fedora-*.img.zst ]]; then
         ASSET_NOTES="${ASSET_NOTES}- \\\`${FILENAME}\\\` - The compressed rootfs image. Decompress with \`unzstd\` or \`zstd -d\`.
 "
     elif [[ "${FILENAME}" == *.zip ]]; then
         ASSET_NOTES="${ASSET_NOTES}- \\\`${FILENAME}\\\` - Contains the bootloader and kernel (UKI). Unzip and copy to your ESP partition. This is compatible with all rootfs variants in this release.
 "
-    elif [[ "${FILENAME}" == esp-*.img ]]; then
+    elif [[ "${FILENAME}" == esp-*.img.zst ]]; then
         ASSET_NOTES="${ASSET_NOTES}- \\\`${FILENAME}\\\` - A flashable ESP (EFI System Partition) image that already contains the boot loader and kernel. You can flash this image directly to the ESP partition of your device.
 "
     fi
@@ -135,10 +128,6 @@ done
 
 RELEASE_NOTES=$(cat <<EOF
 Automated build of Fedora 42 for Xiaomi Pad 5 (nabu).
-
-## Changelog
-
-${CHANGELOG}
 
 ## Assets
 
