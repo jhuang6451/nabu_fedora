@@ -113,9 +113,11 @@ dnf install -y \
     e-thos-menu \
     wvkbd \
     sddm-astronaut-theme \
+    agave-nf \
+    maple-mono-normal-nf \
     jetbrains-mono-nf \
-    ubuntu-sans-nf \
-    maple-mono-normal-nf
+    ubuntu-sans-nf
+
 
 echo "Installing other tools for niri..."
 dnf install -y \
