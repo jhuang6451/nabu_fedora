@@ -52,6 +52,9 @@ You tell me.
 > [!NOTE]
 > Re-partitioning your device wipes android's userdata, make sure all important files are backed up!!
 
+> [!NOTE]
+> For those who already have an esp partition with efi files, you can download `efi-files-xx.x.zip` from release and manually place needed efi files into esp partition.
+
 Requirements:
 
 * A PC.
