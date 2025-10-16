@@ -119,8 +119,9 @@ dnf install -y --releasever=$RELEASEVER \
     --exclude dracut-config-rescue \
     @hardware-support \
     alsa-utils \
-    pipewire-pulse \
     pulseaudio-utils \
+    pipewire-pulseaudio \
+    pipewire-alsa \
     systemd-boot-unsigned \
     systemd-ukify \
     xiaomi-nabu-firmware \
