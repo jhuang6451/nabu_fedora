@@ -202,19 +202,6 @@ dnf install -y --releasever=$RELEASEVER \
 
 
 # ==========================================================================
-# --- 创建临时用户 ---
-# ==========================================================================
-echo 'Adding temporary user "user" with sudo privileges...'
-useradd --create-home --groups wheel user
-echo 'user:fedora' | chpasswd
-SUDOERS_FILE="/etc/sudoers.d/99-wheel-user"
-echo '%wheel ALL=(ALL) ALL' > "$SUDOERS_FILE"
-chmod 0440 "$SUDOERS_FILE"
-echo "Sudo access for group 'wheel' has been configured."
-
-
-
-# ==========================================================================
 # --- 清理 DNF 缓存 ---
 # ==========================================================================
 echo 'Cleaning dnf cache...'

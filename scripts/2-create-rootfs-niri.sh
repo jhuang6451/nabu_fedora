@@ -129,6 +129,17 @@ echo "Configuring Copr repository..."
 dnf copr enable -y yalter/niri
 dnf copr enable -y solopasha/hyprland
 
+# ==========================================================================
+# --- 创建临时用户 ---
+# ==========================================================================
+echo 'Adding temporary user "user" with sudo privileges...'
+useradd --create-home --groups wheel user
+echo 'user:fedora' | chpasswd
+SUDOERS_FILE="/etc/sudoers.d/99-wheel-user"
+echo '%wheel ALL=(ALL) ALL' > "$SUDOERS_FILE"
+chmod 0440 "$SUDOERS_FILE"
+echo "Sudo access for group 'wheel' has been configured."
+
 echo "Cleaning dnf cache..."
 dnf clean all
 
