@@ -28,6 +28,8 @@ ROOTFS_NAME="fedora-${BUILD_VERSION}-nabu-rootfs-${VARIANT_NAME}.img"
 ROOTFS_COMPRESSED_NAME="${ROOTFS_NAME}.zst"
 IMG_SIZE="5G"
 
+SUDOERS_FILE="/etc/sudoers.d/99-wheel-user"
+
 # 1. 从基础 rootfs 复制
 echo "Creating $VARIANT_NAME rootfs from base..."
 rm -rf "$ROOTFS_DIR" # 清理旧目录
@@ -54,7 +56,7 @@ mount_chroot_fs
 
 # 3. 在 Chroot 环境中安装特定软件包以及配置
 echo "Installing packages inside chroot..."
-chroot "$ROOTFS_DIR" /bin/bash <<'CHROOT_SCRIPT'
+chroot "$ROOTFS_DIR" /bin/bash <<CHROOT_SCRIPT
 set -e
 
 # ==========================================================================
