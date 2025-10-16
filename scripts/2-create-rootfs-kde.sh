@@ -54,7 +54,7 @@ mount_chroot_fs
 
 # 3. 在 Chroot 环境中安装 KDE 软件包
 echo "Installing KDE Plasma desktop environment inside chroot..."
-chroot "$ROOTFS_DIR" /bin/bash <<CHROOT_SCRIPT
+chroot "$ROOTFS_DIR" /bin/bash <<'CHROOT_SCRIPT'
 set -e
 
 # ==========================================================================

@@ -54,7 +54,7 @@ mount_chroot_fs
 
 # 3. 在 Chroot 环境中安装 GNOME 等软件包以及配置
 echo "Installing GNOME desktop environment inside chroot..."
-chroot "$ROOTFS_DIR" /bin/bash <<CHROOT_SCRIPT
+chroot "$ROOTFS_DIR" /bin/bash <<'CHROOT_SCRIPT'
 set -e
 
 # ==========================================================================
