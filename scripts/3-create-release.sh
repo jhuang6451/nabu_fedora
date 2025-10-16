@@ -79,7 +79,8 @@ echo "INFO: Searching for rootfs image artifacts in '${ARTIFACTS_DIR}'..."
 ROOTFS_IMAGES=($(find "${ARTIFACTS_DIR}" -type f -name "*.img.zst" ! -name "flashable_esp.img.zst"))
 
 if [ ${#ROOTFS_IMAGES[@]} -eq 0 ]; then
-    echo "WARNING: No rootfs artifact (*.img.zst) found in '${ARTIFACTS_DIR}'. Release will only contain EFI files."
+    echo "ERROR: No rootfs artifact (*.img.zst) found in '${ARTIFACTS_DIR}'."
+    exit 1
 fi
 
 echo "INFO: Found ${#ROOTFS_IMAGES[@]} rootfs image(s) to process."
