@@ -86,6 +86,7 @@ dnf install -y \
     --repofrompath="niri,https://download.copr.fedorainfracloud.org/results/yalter/niri/fedora-$RELEASEVER-$ARCH/" \
     --exclude alacritty \
     --exclude swaybg \
+    --exclude swaylock \
     niri
 
 echo "Installing from solopasha/hyprland..."
@@ -94,7 +95,8 @@ dnf install -y \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     --repofrompath="hyprland,https://download.copr.fedorainfracloud.org/results/solopasha/hyprland/fedora-$RELEASEVER-$ARCH/" \
-    swww
+    swww \
+    hyprpaper
 
 echo "Installing from jhuang6451/jhuang6451..."
 dnf install -y \
@@ -103,7 +105,7 @@ dnf install -y \
     --setopt=install_weak_deps=False \
     swaylock-effects \
     e-thos-menu \
-    wvkbd
+    wvkbd \
     sddm-astronaut-theme \
     jetbrains-mono-nf \
     ubuntu-sans-nf \
@@ -118,9 +120,7 @@ dnf install -y \
     waybar \
     fuzzel \
     mako \
-    hyprpaper \
     swayidle \
-    swaylock \
     kitty \
     thunar \
     fastfetch
@@ -128,6 +128,7 @@ dnf install -y \
 echo "Configuring Copr repository..."
 dnf copr enable -y yalter/niri
 dnf copr enable -y solopasha/hyprland
+dnf copr enable -y jhuang6451/jhuang6451
 
 # ==========================================================================
 # --- 创建临时用户 ---
