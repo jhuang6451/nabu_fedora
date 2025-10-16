@@ -120,7 +120,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: esp-image
-          path: esp.img
+          path: flashable_esp.img.zst
 
   build-variants:
     # 等待基础构建和矩阵生成都完成
@@ -162,7 +162,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rootfs-artifact-${{ matrix.variant }}
-          path: fedora-${{ env.BUILD_VERSION }}-nabu-rootfs-${{ matrix.variant }}.img
+          path: fedora-${{ env.BUILD_VERSION }}-nabu-rootfs-${{ matrix.variant }}.img.zst
 
   create-release:
     runs-on: ubuntu-24.04-arm

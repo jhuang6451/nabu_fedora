@@ -25,6 +25,7 @@ RELEASEVER="42"
 ARCH="aarch64"
 BUILD_VERSION="${BUILD_VERSION}"
 ROOTFS_NAME="fedora-${BUILD_VERSION}-nabu-rootfs-${VARIANT_NAME}.img"
+ROOTFS_COMPRESSED_NAME="${ROOTFS_NAME}.zst"
 IMG_SIZE="8G"
 
 # 1. 从基础 rootfs 复制
@@ -157,7 +158,7 @@ rmdir "$MOUNT_DIR"
 trap - EXIT
 sync
 
-# 6. 最小化并压缩 img 文件
+# 6. 最小化 img 文件
 echo "Minimizing the image file..."
 e2fsck -f -y "$ROOTFS_NAME" || true
 resize2fs -M "$ROOTFS_NAME"
@@ -178,6 +179,11 @@ NEW_SIZE_KB=$((MIN_SIZE_KB + SAFETY_MARGIN_KB))
 truncate -s "${NEW_SIZE_KB}K" "$ROOTFS_NAME"
 resize2fs "$ROOTFS_NAME"
 
+# 7. 压缩img 文件
+echo "INFO: Compressing '${ROOTFS_NAME}' using zstd..."
+# -T0 使用所有可用线程，-v 显示进度
+zstd -T0 -v "${ROOTFS_NAME}"
+
 echo "=============================================================================="
-echo "KDE rootfs image created successfully: $ROOTFS_NAME"
+echo "Compressed KDE rootfs image created successfully: $ROOTFS_COMPRESSED_NAME"
 echo "=============================================================================="

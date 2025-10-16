@@ -214,8 +214,8 @@ if [ -d "$EFI_DIR" ] && [ -n "$(ls -A "$EFI_DIR")" ]; then
     echo "EFI files packaged into efi-files.zip"
 
 #  7. 创建可刷写的 ESP 镜像 ---
-    echo "Creating flashable ESP image (esp.img)..."
-    ESP_IMAGE="$PROJECT_ROOT/esp.img"
+    echo "Creating flashable ESP image (flashable_esp.img)..."
+    ESP_IMAGE="$PROJECT_ROOT/flashable_esp.img"
     ESP_SIZE="350M"
     TEMP_MOUNT=$(mktemp -d)
 
@@ -233,6 +233,15 @@ if [ -d "$EFI_DIR" ] && [ -n "$(ls -A "$EFI_DIR")" ]; then
     rm -rf "$TEMP_MOUNT"
 
     echo "Flashable ESP image created successfully at: $ESP_IMAGE"
+
+    ESP_IMAGE_COMPRESSED="${ESP_IMAGE}.zst"
+
+    # 使用 zstd 进行压缩
+    echo "INFO: Compressing '${ESP_IMAGE}' using zstd..."
+    # -T0 使用所有可用线程，-v 显示进度
+    zstd -T0 -v "${ESP_IMAGE}"
+
+    echo "Flashable ESP image compressed"
 
 else
     echo "ERROR: EFI directory '$EFI_DIR' is empty or does not exist." >&2
