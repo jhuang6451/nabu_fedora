@@ -220,7 +220,7 @@ if [ -d "$EFI_DIR" ] && [ -n "$(ls -A "$EFI_DIR")" ]; then
 #  7. 创建可刷写的 ESP 镜像 ---
     echo "Creating flashable ESP image (flashable_esp.img)..."
     ESP_IMAGE="$PROJECT_ROOT/flashable_esp.img"
-    ESP_SIZE="350M"
+    ESP_SIZE="330M"
     TEMP_MOUNT=$(mktemp -d)
 
     # 创建空镜像并挂载
