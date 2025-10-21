@@ -161,12 +161,20 @@ dnf copr enable -y jhuang6451/jhuang6451
 # ==========================================================================
 # --- 安装内核 ---
 # ==========================================================================
+echo "Installing dnf-plugins-core for version-lock..."
+dnf install -y --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    dnf-plugins-core
+
 echo "Installing kernel package to trigger UKI generation..."
 dnf install -y --releasever=$RELEASEVER \
-    --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="kernel-sam-ufs-fix,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_rodriguezst_kernel/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     kernel-sm8150
+
+dnf versionlock add kernel-sm8150
 
 echo "Verifying UKI Generation..."
 if [ -d "/boot/efi/EFI/fedora" ] && [ -n "$(find /boot/efi/EFI/fedora -name '*.efi')" ]; then
