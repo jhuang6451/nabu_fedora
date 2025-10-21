@@ -129,6 +129,10 @@ done
 RELEASE_NOTES=$(cat <<EOF
 Automated build of Fedora 42 for Xiaomi Pad 5 (nabu).
 
+## Changelog
+
+${CHANGELOG}
+
 ## Assets
 
 ${ASSET_NOTES}
