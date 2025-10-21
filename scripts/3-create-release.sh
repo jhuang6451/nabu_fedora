@@ -59,19 +59,19 @@ cp "${EFI_ZIP_SOURCE}" "${EFI_RELEASE_NAME}"
 ASSETS_TO_UPLOAD+=("${EFI_RELEASE_NAME}")
 echo "INFO: Added '${EFI_RELEASE_NAME}' to upload list."
 
-# 2. 查找并准备 ESP 镜像文件
-echo "INFO: Searching for ESP image artifact (flashable_esp.img.zst)..."
-ESP_IMG_SOURCE=$(find "${ARTIFACTS_DIR}" -type f -name "flashable_esp.img.zst")
+# # 2. 查找并准备 ESP 镜像文件
+# echo "INFO: Searching for ESP image artifact (flashable_esp.img.zst)..."
+# ESP_IMG_SOURCE=$(find "${ARTIFACTS_DIR}" -type f -name "flashable_esp.img.zst")
 
-if [ -n "$ESP_IMG_SOURCE" ]; then
-    echo "INFO: Found ESP image artifact at ${ESP_IMG_SOURCE}"
-    ESP_RELEASE_NAME="esp-${BUILD_VERSION}.img.zst"
-    cp "${ESP_IMG_SOURCE}" "${ESP_RELEASE_NAME}"
-    ASSETS_TO_UPLOAD+=("${ESP_RELEASE_NAME}")
-    echo "INFO: Added '${ESP_RELEASE_NAME}' to upload list."
-else
-    echo "WARNING: flashable_esp.img.zst not found in artifacts. It will not be included in the release."
-fi
+# if [ -n "$ESP_IMG_SOURCE" ]; then
+#     echo "INFO: Found ESP image artifact at ${ESP_IMG_SOURCE}"
+#     ESP_RELEASE_NAME="esp-${BUILD_VERSION}.img.zst"
+#     cp "${ESP_IMG_SOURCE}" "${ESP_RELEASE_NAME}"
+#     ASSETS_TO_UPLOAD+=("${ESP_RELEASE_NAME}")
+#     echo "INFO: Added '${ESP_RELEASE_NAME}' to upload list."
+# else
+#     echo "WARNING: flashable_esp.img.zst not found in artifacts. It will not be included in the release."
+# fi
 
 # 3. 查找所有 rootfs 镜像文件
 echo "INFO: Searching for rootfs image artifacts in '${ARTIFACTS_DIR}'..."
@@ -101,7 +101,7 @@ fi
 
 # 6. 准备并创建 Release
 TAG="release-$(date +'%Y%m%d-%H%M')"
-RELEASE_TITLE="Fedora for Nabu ${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
+RELEASE_TITLE="Fedora for Nabu (w/Samsung UFS Fix) ${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
 
 CHANGELOG="* No changelog provided."
 if [ -f "docs/release-notes.md" ]; then
@@ -129,6 +129,8 @@ done
 RELEASE_NOTES=$(cat <<EOF
 Automated build of Fedora 42 for Xiaomi Pad 5 (nabu).
 
+***This is a special version utilizing a 6.16 kernel patched with fix for nabu devices with Samsung UFS.***
+
 ## Assets
 
 ${ASSET_NOTES}
@@ -143,7 +145,6 @@ echo "INFO: Creating GitHub release '${TAG}' with ${#ASSETS_TO_UPLOAD[@]} assets
 gh release create "$TAG" \
     --title "$RELEASE_TITLE" \
     --notes "$RELEASE_NOTES" \
-    --latest \
     "${ASSETS_TO_UPLOAD[@]}"
 
 echo "SUCCESS: Release ${TAG} created successfully with all assets."
