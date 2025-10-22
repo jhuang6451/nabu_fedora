@@ -1,3 +1,4 @@
+!(docs/950_1x_shots_so.png)
 # Fedora for Nabu
 
 English | [Simplified-Chinese](./docs/README.zh.md)
