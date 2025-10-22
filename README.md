@@ -5,17 +5,6 @@ English | [Simplified-Chinese](./docs/README.zh.md)
 
 A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image for the Xiaomi Pad 5 (nabu) device (aarch64), along with tutorials and resources for installation. The build process produces a bootable root filesystem and efi files.
 
-<details>
-  <summary>**See Screenshots Here!**</summary>
-  
-  ![KDE](docs/kde.png)
-
-  ![niri](docs/niri.png)
-
-  ![Gnome](docs/gnome.png)
-  
-</details>
-
 > [!NOTE]
 > The initial username is `user` and the password is `fedora`.
 
@@ -45,17 +34,13 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 * **Dualboot With Android:** Installed alongside your android system, choose system at boot.
 * **Latest Kernel:** Built with latest mainline for sm8150 (6.16).
 
-## Todos
+## Screenshots
+  
+![KDE](docs/kde.png)
 
-* [x] Fix UKI generation.
-* [x] Fix efi installation.
-* [x] Fix esp image generation.
-* [x] Complete installation tutorial docs.
-* [x] Dualboot optimization.
-* [x] Release config files via Copr.
-* [x] KDE variant.
-* [x] Niri variant.
-* [x] Update kernel to 6.17.
+![niri](docs/niri.png)
+
+![Gnome](docs/gnome.png)
 
 ## Bugs
 
