@@ -150,7 +150,7 @@ MIN_BLOCKS=$(dumpe2fs -h "$ROOTFS_NAME" 2>/dev/null | grep 'Block count:' | awk 
 BLOCK_SIZE_KB=$(dumpe2fs -h "$ROOTFS_NAME" 2>/dev/null | grep 'Block size:' | awk '{print $3 / 1024}')
 
 if ! [[ "$MIN_BLOCKS" =~ ^[0-9]+$ ]] || ! [[ "$BLOCK_SIZE_KB" =~ ^[0-9]+$ ]]; then
-    echo "Error: Failed to retrieve block size or block count from image." >&2
+    echo "❎ ERROR: Failed to retrieve block size or block count from image." >&2
     exit 1
 fi
 
@@ -167,5 +167,5 @@ echo "INFO: Compressing '${ROOTFS_NAME}' using zstd..."
 zstd -T0 -v "${ROOTFS_NAME}"
 
 echo "=============================================================================="
-echo "Compressed GNOME rootfs image created successfully: $ROOTFS_COMPRESSED_NAME"
+echo "✅ Compressed GNOME rootfs image created successfully: $ROOTFS_COMPRESSED_NAME"
 echo "=============================================================================="

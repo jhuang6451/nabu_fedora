@@ -48,7 +48,7 @@ echo "INFO: Searching for EFI zip artifact..."
 EFI_ZIP_SOURCE=$(find "${ARTIFACTS_DIR}" -type f -name "efi-files.zip")
 
 if [ -z "$EFI_ZIP_SOURCE" ]; then
-    echo "ERROR: efi-files.zip not found in artifacts!" >&2
+    echo "❎ ERROR: efi-files.zip not found in artifacts!" >&2
     ls -R "${ARTIFACTS_DIR}"
     exit 1
 fi
@@ -79,7 +79,7 @@ echo "INFO: Searching for rootfs image artifacts in '${ARTIFACTS_DIR}'..."
 ROOTFS_IMAGES=($(find "${ARTIFACTS_DIR}" -type f -name "*.img.zst" ! -name "flashable_esp.img.zst"))
 
 if [ ${#ROOTFS_IMAGES[@]} -eq 0 ]; then
-    echo "ERROR: No rootfs artifact (*.img.zst) found in '${ARTIFACTS_DIR}'."
+    echo "❎ ERROR: No rootfs artifact (*.img.zst) found in '${ARTIFACTS_DIR}'."
     exit 1
 fi
 
@@ -95,7 +95,7 @@ done
 
 # 5. 检查是否有可上传的资产
 if [ ${#ASSETS_TO_UPLOAD[@]} -eq 0 ]; then
-    echo "ERROR: No assets were generated for upload. Exiting." >&2
+    echo "❎ ERROR: No assets were generated for upload. Exiting." >&2
     exit 1
 fi
 
@@ -150,4 +150,4 @@ gh release create "$TAG" \
     --latest \
     "${ASSETS_TO_UPLOAD[@]}"
 
-echo "SUCCESS: Release ${TAG} created successfully with all assets."
+echo "✅ SUCCESS: Release ${TAG} created successfully with all assets."
