@@ -28,7 +28,7 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 
 ## Features
 
-* **Smooth Gnome/KDE Experience:** Packed with streamlined gnome or KDE, and fcitx as default input method, providing solid out-of-the-box experience.
+* **Polished UI:** Providing choice between streamlined DEs and an unique WM: niri. Uses fcitx as default input method, providing solid out-of-the-box experience.
 * **Unified Kernel Image (UKI):** Utilizes UKI for a streamlined boot process.
 * **Dualboot With Android:** Installed alongside your android system, choose system at boot.
 * **Latest Kernel:** Built with latest mainline for sm8150 (6.16).
@@ -37,12 +37,13 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 
 * [x] Fix UKI generation.
 * [x] Fix efi installation.
+* [x] Fix esp image generation.
 * [x] Complete installation tutorial docs.
 * [x] Dualboot optimization.
 * [x] Release config files via Copr.
 * [x] KDE variant.
-* [ ] Niri variant.
-* [ ] Update kernel to 6.17.
+* [x] Niri variant.
+* [x] Update kernel to 6.17.
 
 ## Bugs
 You tell me.
@@ -53,7 +54,7 @@ You tell me.
 > Re-partitioning your device wipes android's userdata, make sure all important files are backed up!!
 
 > [!NOTE]
-> For those who already have an esp partition with efi files, you can download `efi-files-xx.x.zip` from release and manually place needed efi files into esp partition.
+> For those who already have an esp partition and don't want it overwritten, you can download `efi-files-xx.x.zip` from release and manually place needed efi files into esp partition.
 
 Requirements:
 
