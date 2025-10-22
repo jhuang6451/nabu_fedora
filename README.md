@@ -16,6 +16,9 @@ English | [Simplified-Chinese](./docs/README.zh.md)
 
 A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image for the Xiaomi Pad 5 (nabu) device (aarch64), along with tutorials and resources for installation. The build process produces a bootable root filesystem and efi files.
 
+> [!WARNING]
+> **Since this project uses the community-supported mainline kernel, some hardware features are not yet fully supported or have bugs.**
+
 > [!NOTE]
 > The initial username is `user` and the password is `fedora`.
 
@@ -74,7 +77,7 @@ Steps:
     * Make sure `android-tools` is installed on your PC, or download `platform-tools` from [Official Website](https://developer.android.com/tools/releases/platform-tools), then decompress and cd into it.
     * Download and decompress both esp image and desired rootfs image from release.
     * Download ArKT-7's modded TWRP for nabu from [here](https://github.com/ArKT-7/twrp_device_xiaomi_nabu/releases/tag/mod_linux).
-    * Download dualboot kernel pacher from [here](https://github.com/rodriguezst/nabu-dualboot-img/releases) (If you don't know what secureboot is, just download the NOSB version).
+    * Download dualboot kernel patcher from [here](https://github.com/rodriguezst/nabu-dualboot-img/releases) (If you don't know what secureboot is, just download the NOSB version).
 
 2. Partitioning:
     * Connect your tablet to your PC.
@@ -126,10 +129,6 @@ Steps:
 
 > [!NOTE]
 > Make sure the rootfs is decompressed.
-
-## Bugs
-
-You tell me.
 
 ## Support Groups
 
