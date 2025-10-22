@@ -28,7 +28,7 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 
 ## Features
 
-* **Polished UI:** Providing choice between streamlined DEs and an unique WM: niri. Uses fcitx as default input method, providing solid out-of-the-box experience.
+* **Polished UIs:** Providing choice between streamlined DEs and an unique WM: niri. Uses fcitx as default input method, providing solid out-of-the-box experience.
 * **Unified Kernel Image (UKI):** Utilizes UKI for a streamlined boot process.
 * **Dualboot With Android:** Installed alongside your android system, choose system at boot.
 * **Latest Kernel:** Built with latest mainline for sm8150 (6.16).
