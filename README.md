@@ -14,9 +14,7 @@ A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image 
 
   ![Gnome](docs/gnome.png)
   
-  ```javascript
-  // 也可以包含代码块
-  console.log("Hello, World!");
+</details>
 
 > [!NOTE]
 > The initial username is `user` and the password is `fedora`.
