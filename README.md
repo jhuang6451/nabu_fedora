@@ -11,22 +11,6 @@ A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image 
 > [!TIP]
 > Most updates will be released to pre-installed packages from [my Copr](https://copr.fedorainfracloud.org/coprs/jhuang6451/nabu_fedora_packages/). Check for them with `dnf upgrade`!
 
-## Disclaimer
-
-```
-This project is an unofficial port of Fedora Linux to the Xiaomi Pad 5 (nabu) device. It is provided "as is" without any warranties of any kind, either express or implied, including, but not limited to, the implied warranties of merchantability, fitness for a particular purpose, or non-infringement.
-
-By using, flashing, or interacting with any files, images, or instructions provided by this project, you acknowledge and agree to the following:
-
-1.  Use at Your Own Risk: You are solely responsible for any damage to your device, loss of data, or any other issues that may arise from using this software. The developers and contributors of this project shall not be held liable for any such damages or losses.
-2.  No Official Support: This project is not officially endorsed, supported, or affiliated with Fedora Project, Red Hat, Xiaomi, or any other hardware or software vendor.
-3.  Experimental Nature: This is an ongoing development effort, and the software may contain bugs, instabilities, or incomplete features. Functionality may not be fully optimized or reliable.
-4.  Data Loss Warning: Flashing custom operating systems inherently carries a risk of data loss. It is **strongly recommended** that you back up all important data from your device before attempting any installation.
-5.  No Guarantee of Updates: While efforts will be made to maintain and update the project, there is no guarantee of continuous support, bug fixes, or future releases.
-
-Proceed with caution and at your own discretion. If you are not comfortable with these terms, please do not use this project.
-```
-
 ## Features
 
 * **Polished UIs:** Providing choice between streamlined DEs and an unique WM: niri. Uses fcitx as default input method, providing solid out-of-the-box experience.
@@ -42,9 +26,21 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 
 ![Gnome](docs/gnome.png)
 
-## Bugs
+## Disclaimer
 
-You tell me.
+```
+This project is an unofficial port of Fedora Linux to the Xiaomi Pad 5 (nabu) device. It is provided "as is" without any warranties of any kind, either express or implied, including, but not limited to, the implied warranties of merchantability, fitness for a particular purpose, or non-infringement.
+
+By using, flashing, or interacting with any files, images, or instructions provided by this project, you acknowledge and agree to the following:
+
+1.  Use at Your Own Risk: You are solely responsible for any damage to your device, loss of data, or any other issues that may arise from using this software. The developers and contributors of this project shall not be held liable for any such damages or losses.
+2.  No Official Support: This project is not officially endorsed, supported, or affiliated with Fedora Project, Red Hat, Xiaomi, or any other hardware or software vendor.
+3.  Experimental Nature: This is an ongoing development effort, and the software may contain bugs, instabilities, or incomplete features. Functionality may not be fully optimized or reliable.
+4.  Data Loss Warning: Flashing custom operating systems inherently carries a risk of data loss. It is **strongly recommended** that you back up all important data from your device before attempting any installation.
+5.  No Guarantee of Updates: While efforts will be made to maintain and update the project, there is no guarantee of continuous support, bug fixes, or future releases.
+
+Proceed with caution and at your own discretion. If you are not comfortable with these terms, please do not use this project.
+```
 
 ## Installation Tutorial (Dualboot Supportive)
 
@@ -119,6 +115,10 @@ Steps:
 
 > [!NOTE]
 > Make sure the rootfs is decompressed.
+
+## Bugs
+
+You tell me.
 
 ## Support Groups
 
