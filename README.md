@@ -57,7 +57,7 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 
 ## Installation Tutorial (Dualboot Supportive)
 
-> [!NOTE]
+> [!IMPORTANT]
 > Re-partitioning your device wipes android's userdata, make sure all important files are backed up!!
 
 > [!NOTE]
