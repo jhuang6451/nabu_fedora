@@ -118,7 +118,7 @@ for ASSET in "${ASSETS_TO_UPLOAD[@]}"; do
         ASSET_NOTES="${ASSET_NOTES}- \\\`${FILENAME}\\\` - The compressed rootfs image. Decompress with \`unzstd\` or \`zstd -d\`.
 "
     elif [[ "${FILENAME}" == *.zip ]]; then
-        ASSET_NOTES="${ASSET_NOTES}- \\\`${FILENAME}\\\` - Contains the bootloader and kernel (UKI). Unzip and copy to your ESP partition. This is compatible with all rootfs variants in this release.
+        ASSET_NOTES="${ASSET_NOTES}- \\\`${FILENAME}\\\` - An alternative to the flashable ESP image if you don't want to your existing esp partition being overwritten (in which case manually copying the files is needed), contains the bootloader and kernel (UKI).
 "
     elif [[ "${FILENAME}" == esp-*.img.zst ]]; then
         ASSET_NOTES="${ASSET_NOTES}- \\\`${FILENAME}\\\` - A flashable ESP (EFI System Partition) image that already contains the boot loader and kernel. You can flash this image directly to the ESP partition of your device.
