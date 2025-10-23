@@ -59,19 +59,19 @@ cp "${EFI_ZIP_SOURCE}" "${EFI_RELEASE_NAME}"
 ASSETS_TO_UPLOAD+=("${EFI_RELEASE_NAME}")
 echo "INFO: Added '${EFI_RELEASE_NAME}' to upload list."
 
-# # 2. 查找并准备 ESP 镜像文件
-# echo "INFO: Searching for ESP image artifact (flashable_esp.img.zst)..."
-# ESP_IMG_SOURCE=$(find "${ARTIFACTS_DIR}" -type f -name "flashable_esp.img.zst")
+# 2. 查找并准备 ESP 镜像文件
+echo "INFO: Searching for ESP image artifact (flashable_esp.img.zst)..."
+ESP_IMG_SOURCE=$(find "${ARTIFACTS_DIR}" -type f -name "flashable_esp.img.zst")
 
-# if [ -n "$ESP_IMG_SOURCE" ]; then
-#     echo "INFO: Found ESP image artifact at ${ESP_IMG_SOURCE}"
-#     ESP_RELEASE_NAME="esp-${BUILD_VERSION}.img.zst"
-#     cp "${ESP_IMG_SOURCE}" "${ESP_RELEASE_NAME}"
-#     ASSETS_TO_UPLOAD+=("${ESP_RELEASE_NAME}")
-#     echo "INFO: Added '${ESP_RELEASE_NAME}' to upload list."
-# else
-#     echo "WARNING: flashable_esp.img.zst not found in artifacts. It will not be included in the release."
-# fi
+if [ -n "$ESP_IMG_SOURCE" ]; then
+    echo "INFO: Found ESP image artifact at ${ESP_IMG_SOURCE}"
+    ESP_RELEASE_NAME="esp-${BUILD_VERSION}.img.zst"
+    cp "${ESP_IMG_SOURCE}" "${ESP_RELEASE_NAME}"
+    ASSETS_TO_UPLOAD+=("${ESP_RELEASE_NAME}")
+    echo "INFO: Added '${ESP_RELEASE_NAME}' to upload list."
+else
+    echo "WARNING: flashable_esp.img.zst not found in artifacts. It will not be included in the release."
+fi
 
 # 3. 查找所有 rootfs 镜像文件
 echo "INFO: Searching for rootfs image artifacts in '${ARTIFACTS_DIR}'..."
