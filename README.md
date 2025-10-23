@@ -29,7 +29,7 @@ A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image 
 * **Polished UIs:** Providing choice between streamlined DEs and an unique WM: niri. Uses fcitx as default input method, providing solid out-of-the-box experience.
 * **Unified Kernel Image (UKI):** Utilizes UKI for a streamlined boot process.
 * **Dualboot With Android:** Installed alongside your android system, choose system at boot.
-* **Latest Kernel:** Built with latest mainline for sm8150 (6.16).
+* **Latest Kernel:** Built with latest mainline for sm8150 (6.17.0).
 
 ## Screenshots
   
