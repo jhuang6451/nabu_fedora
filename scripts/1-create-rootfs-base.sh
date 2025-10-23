@@ -224,26 +224,52 @@ if [ -d "$EFI_DIR" ] && [ -n "$(ls -A "$EFI_DIR")" ]; then
     (cd "$EFI_DIR" && zip -r "$PROJECT_ROOT/efi-files.zip" .)
     echo "EFI files packaged into efi-files.zip"
 
-#  7. 创建可刷写的 ESP 镜像 ---
+# 7. 创建可刷写的 ESP 镜像
     echo "Creating flashable ESP image (flashable_esp.img)..."
+    # --- 配置参数 ---
     ESP_IMAGE="$PROJECT_ROOT/flashable_esp.img"
-    ESP_SIZE="350M"
-    TEMP_MOUNT=$(mktemp -d)
+    IMG_SIZE_BYTES=350105600
+    LOGICAL_SECTOR_SIZE=4096
+    SECTORS_PER_CLUSTER=1 # (因为 Cluster Size 4096 / Sector Size 4096 = 1)
+    RESERVED_SECTORS=32
+    HIDDEN_SECTORS=21234176
+    VOLUME_LABEL="ESPNABU"
+    VOLUME_ID="5C7A09AD" # mkfs.vfat接受不带'0x'的十六进制ID
 
-    # 创建空镜像并挂载
-    truncate -s "$ESP_SIZE" "$ESP_IMAGE"
-    mkfs.vfat -F 32 -n "ESPNABU" "$ESP_IMAGE"
-    mount -o loop "$ESP_IMAGE" "$TEMP_MOUNT"
+    MOUNT_POINT=$(mktemp -d)
 
-    # 写入EFI文件
-    cp -r "$EFI_DIR"/* "$TEMP_MOUNT/"
-    sync
-    
-    # 卸载镜像
-    umount "$TEMP_MOUNT"
-    rm -rf "$TEMP_MOUNT"
+    # --- 脚本执行 ---
+    echo ">>> [1/5] Creating empty image file..."
+    truncate -s ${IMG_SIZE_BYTES} ${ESP_IMAGE}
 
-    echo "Flashable ESP image created successfully at: $ESP_IMAGE"
+    echo ">>> [2/5] Formatting image with precise device geometry..."
+    mkfs.vfat \
+        -F 32 \
+        -S ${LOGICAL_SECTOR_SIZE} \
+        -s ${SECTORS_PER_CLUSTER} \
+        -R ${RESERVED_SECTORS} \
+        -h ${HIDDEN_SECTORS} \
+        -n "${VOLUME_LABEL}" \
+        -i "${VOLUME_ID}" \
+        -f 2 \
+        ${ESP_IMAGE}
+
+    echo ">>> [3/5] Mounting the image file..."
+    mount -o loop ${ESP_IMAGE} ${MOUNT_POINT}
+
+    echo ">>> [4/5] Copying EFI files..."
+    # 确保源目录存在
+    if [ ! -d "${EFI_DIR}" ]; then
+        echo "❎ ERROR: EFI source directory '${EFI_DIR}' not found!"
+        umount ${MOUNT_POINT}
+        exit 1
+    fi
+    cp -r ${EFI_DIR}/* ${MOUNT_POINT}/
+
+    echo ">>> [5/5] Unmounting the image file..."
+    umount ${MOUNT_POINT}
+
+    echo "✅ Successfully created bootable ${ESP_IMAGE}"
 
     ESP_IMAGE_COMPRESSED="${ESP_IMAGE}.zst"
 
@@ -252,10 +278,10 @@ if [ -d "$EFI_DIR" ] && [ -n "$(ls -A "$EFI_DIR")" ]; then
     # -T0 使用所有可用线程，-v 显示进度
     zstd -T0 -v "${ESP_IMAGE}"
 
-    echo "Flashable ESP image compressed"
+    echo "✅ Flashable ESP image compressed"
 
 else
-    echo "ERROR: EFI directory '$EFI_DIR' is empty or does not exist." >&2
+    echo "❎ ERROR: EFI directory '$EFI_DIR' is empty or does not exist." >&2
     echo "Listing contents of '$ROOTFS_DIR/boot' for debugging:" >&2
     ls -lR "$ROOTFS_DIR/boot" || echo "Directory '$ROOTFS_DIR/boot' not found." >&2
     exit 1
