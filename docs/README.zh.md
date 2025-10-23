@@ -1,7 +1,7 @@
-![](docs/banner.png)
+![](banner.png)
 # Fedora for Nabu
 
-English | [简体中文](./docs/README.zh.md)
+[English](../README.md) | 简体中文
 
 > ### 目录
 >
@@ -33,11 +33,11 @@ English | [简体中文](./docs/README.zh.md)
 
 ## 截图
 
-![KDE](docs/kde.png)
+![KDE](kde.png)
 
-![niri](docs/niri.png)
+![niri](niri.png)
 
-![Gnome](docs/gnome.png)
+![Gnome](gnome.png)
 
 ## 免责声明
 
