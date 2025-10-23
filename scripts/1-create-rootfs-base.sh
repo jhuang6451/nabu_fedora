@@ -172,7 +172,7 @@ dnf install -y --releasever=$RELEASEVER \
     --repofrompath="kernel-sam-ufs-fix,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_rodriguezst_kernel/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
-    kernel-sm8150
+    kernel-sm8150-6.16.0-1.p.sm8150.fc42
 
 dnf versionlock add kernel-sm8150
 
