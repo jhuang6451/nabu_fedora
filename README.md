@@ -1,7 +1,7 @@
 ![](docs/banner.png)
 # Fedora for Nabu
 
-English | [Simplified-Chinese](./docs/README.zh.md)
+English | [简体中文](./docs/README.zh.md)
 
 > ### Menu
 >
@@ -58,7 +58,7 @@ Proceed with caution and at your own discretion. If you are not comfortable with
 ## Installation Tutorial (Dualboot Supportive)
 
 > [!IMPORTANT]
-> Re-partitioning your device wipes android's userdata, make sure all important files are backed up!!
+> Re-partitioning your device wipes android's userdata, make sure all important files are backed up!
 
 > [!NOTE]
 > For those who already have an esp partition and don't want it overwritten, you can download `efi-files-xx.x.zip` from release and manually place needed efi files into esp partition.
@@ -138,13 +138,13 @@ Steps:
 * [@ArKT-7](https://github.com/ArKT-7) for modded TWRP for nabu.
 * [@rodriguezst](https://github.com/rodriguezst) for dualboot kernel pacher.
 * [Project-Aloha](https://github.com/Project-Aloha) for UEFI development.
-* [@gmankab](https://github.com/gmankab), [@Timofey](https://github.com/timoxa0), [@nik012003](https://github.com/nik012003) and all the other developers for building linux distros for nabu.
-* [@panpantepan](https://gitlab.com/panpanpanpan), [@map220v](https://github.com/map220v), [@nik012003](https://github.com/nik012003) and all the other developers who contributed to mainlining.
+* [@gmankab](https://github.com/gmankab), [@Timofey](https://github.com/timoxa0), [@nik012003](https://github.com/nik012003), [@panpantepan](https://gitlab.com/panpanpanpan) and all the other developers for building linux distros for nabu.
+* [@panpantepan](https://gitlab.com/panpanpanpan), [@map220v](https://github.com/map220v), [@nik012003](https://github.com/nik012003) and all the other developers who contributed to mainline kernel.
 * Everyone trying this project out or giving me advice.
 
 ## See Also
-
+* [postmarketOS](https://wiki.postmarketos.org/wiki/Xiaomi_Pad_5_%28xiaomi-nabu%29) - pmOS for nabu.
 * [pocketblue](https://github.com/pocketblue/pocketblue) - Fedora Silverblue for nabu.
-* [nabu-fedora-builder](https://github.com/nik012003/nabu-fedora-builder) - Another minimum Fedora for nabu.
-* [nabu-alarm](https://github.com/nabu-alarm/) - Archlinux Arm for nabu (EOL).
+* [nabu-fedora-builder](https://github.com/nik012003/nabu-fedora-builder) - Another minimum Fedora for nabu (EOL).
+* [nabu-alarm](https://github.com/nabu-alarm/) - alarm (Arch Linux ARM) for nabu (EOL).
 * [Xiaomi-Nabu](https://github.com/TheMojoMan/Xiaomi-Nabu) - Ubuntu for nabu.
