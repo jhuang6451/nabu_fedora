@@ -1,14 +1,43 @@
+![](docs/banner.png)
 # Fedora for Nabu
 
-English | [Simplified-Chinese](./docs/README.zh.md)
+English | [简体中文](./docs/README.zh.md)
+
+> ### Menu
+>
+> *   [Features](#features)
+> *   [Screenshots](#screenshots)
+> *   [Disclaimer](#disclaimer)
+> *   [Installation Tutorial (Dualboot Supportive)](#installation-tutorial-dualboot-supportive)
+> *   [Support Groups](#support-groups)
+> *   [Credits](#credits)
+> *   [See Also](#see-also)
 
 A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image for the Xiaomi Pad 5 (nabu) device (aarch64), along with tutorials and resources for installation. The build process produces a bootable root filesystem and efi files.
+
+> [!WARNING]
+> **Since this project uses the community-supported mainline kernel, some hardware features are not yet fully supported or have bugs.**
 
 > [!NOTE]
 > The initial username is `user` and the password is `fedora`.
 
 > [!TIP]
 > Most updates will be released to pre-installed packages from [my Copr](https://copr.fedorainfracloud.org/coprs/jhuang6451/nabu_fedora_packages/). Check for them with `dnf upgrade`!
+
+## Features
+
+* **Polished UIs:** Providing choice between streamlined DEs and an unique WM: niri. Uses fcitx as default input method, providing solid out-of-the-box experience.
+* **Unified Kernel Image (UKI):** Utilizes UKI for a streamlined boot process.
+* **Dualboot With Android:** Installed alongside your android system, choose system at boot.
+* **Latest Kernel:** Built with latest mainline for sm8150 (6.17.0).
+
+## Screenshots
+  
+![KDE](docs/kde.png)
+
+![niri](docs/niri.png)
+
+![Gnome](docs/gnome.png)
 
 ## Disclaimer
 
@@ -26,32 +55,10 @@ By using, flashing, or interacting with any files, images, or instructions provi
 Proceed with caution and at your own discretion. If you are not comfortable with these terms, please do not use this project.
 ```
 
-## Features
-
-* **Polished UIs:** Providing choice between streamlined DEs and an unique WM: niri. Uses fcitx as default input method, providing solid out-of-the-box experience.
-* **Unified Kernel Image (UKI):** Utilizes UKI for a streamlined boot process.
-* **Dualboot With Android:** Installed alongside your android system, choose system at boot.
-* **Latest Kernel:** Built with latest mainline for sm8150 (6.16).
-
-## Todos
-
-* [x] Fix UKI generation.
-* [x] Fix efi installation.
-* [x] Fix esp image generation.
-* [x] Complete installation tutorial docs.
-* [x] Dualboot optimization.
-* [x] Release config files via Copr.
-* [x] KDE variant.
-* [x] Niri variant.
-* [x] Update kernel to 6.17.
-
-## Bugs
-You tell me.
-
 ## Installation Tutorial (Dualboot Supportive)
 
-> [!NOTE]
-> Re-partitioning your device wipes android's userdata, make sure all important files are backed up!!
+> [!IMPORTANT]
+> Re-partitioning your device wipes android's userdata, make sure all important files are backed up!
 
 > [!NOTE]
 > For those who already have an esp partition and don't want it overwritten, you can download `efi-files-xx.x.zip` from release and manually place needed efi files into esp partition.
@@ -69,7 +76,7 @@ Steps:
     * Make sure `android-tools` is installed on your PC, or download `platform-tools` from [Official Website](https://developer.android.com/tools/releases/platform-tools), then decompress and cd into it.
     * Download and decompress both esp image and desired rootfs image from release.
     * Download ArKT-7's modded TWRP for nabu from [here](https://github.com/ArKT-7/twrp_device_xiaomi_nabu/releases/tag/mod_linux).
-    * Download dualboot kernel pacher from [here](https://github.com/rodriguezst/nabu-dualboot-img/releases) (If you don't know what secureboot is, just download the NOSB version).
+    * Download dualboot kernel patcher from [here](https://github.com/rodriguezst/nabu-dualboot-img/releases) (If you don't know what secureboot is, just download the NOSB version).
 
 2. Partitioning:
     * Connect your tablet to your PC.
@@ -131,13 +138,13 @@ Steps:
 * [@ArKT-7](https://github.com/ArKT-7) for modded TWRP for nabu.
 * [@rodriguezst](https://github.com/rodriguezst) for dualboot kernel pacher.
 * [Project-Aloha](https://github.com/Project-Aloha) for UEFI development.
-* [@gmankab](https://github.com/gmankab), [@Timofey](https://github.com/timoxa0), [@nik012003](https://github.com/nik012003) and all the other developers for building linux distros for nabu.
-* [@panpantepan](https://gitlab.com/panpanpanpan), [@map220v](https://github.com/map220v), [@nik012003](https://github.com/nik012003) and all the other developers who contributed to mainlining.
+* [@gmankab](https://github.com/gmankab), [@Timofey](https://github.com/timoxa0), [@nik012003](https://github.com/nik012003), [@panpantepan](https://gitlab.com/panpanpanpan) and all the other developers for building linux distros for nabu.
+* [@panpantepan](https://gitlab.com/panpanpanpan), [@map220v](https://github.com/map220v), [@nik012003](https://github.com/nik012003) and all the other developers who contributed to mainline kernel.
 * Everyone trying this project out or giving me advice.
 
 ## See Also
-
+* [postmarketOS](https://wiki.postmarketos.org/wiki/Xiaomi_Pad_5_%28xiaomi-nabu%29) - pmOS for nabu.
 * [pocketblue](https://github.com/pocketblue/pocketblue) - Fedora Silverblue for nabu.
-* [nabu-fedora-builder](https://github.com/nik012003/nabu-fedora-builder) - Another minimum Fedora for nabu.
-* [nabu-alarm](https://github.com/nabu-alarm/) - Archlinux Arm for nabu (EOL).
+* [nabu-fedora-builder](https://github.com/nik012003/nabu-fedora-builder) - Another minimum Fedora for nabu (EOL).
+* [nabu-alarm](https://github.com/nabu-alarm/) - alarm (Arch Linux ARM) for nabu (EOL).
 * [Xiaomi-Nabu](https://github.com/TheMojoMan/Xiaomi-Nabu) - Ubuntu for nabu.
