@@ -130,6 +130,7 @@ dnf install -y --releasever=$RELEASEVER \
 # systemd-boot-unsigned provides efi stub.
 
 echo 'Installing from pocketblue...'
+dnf install -y --releasever=$RELEASEVER \
     --repofrompath="pocketblue,https://download.copr.fedorainfracloud.org/results/pocketblue/common/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
