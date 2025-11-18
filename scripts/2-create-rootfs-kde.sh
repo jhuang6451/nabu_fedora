@@ -21,7 +21,7 @@ fi
 BASE_ROOTFS_DIR="$1"
 VARIANT_NAME="kde"
 ROOTFS_DIR="$PWD/fedora-rootfs-$VARIANT_NAME"
-RELEASEVER="42"
+RELEASEVER="43"
 ARCH="aarch64"
 BUILD_VERSION="${BUILD_VERSION}"
 ROOTFS_NAME="fedora-${BUILD_VERSION}-nabu-rootfs-${VARIANT_NAME}.img"
@@ -103,12 +103,12 @@ dnf install -y \
     google-noto-sans-sc-fonts
 # Can't remove google-noto-serif-vf-fonts & google-noto-sans-mono-vf-fonts because vlc-plugins-base needs it.
 
-echo "Installing KDE-specific config packages..."
-dnf install -y --releasever=$RELEASEVER \
-    --setopt=install_weak_deps=False \
-    --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
-    --nogpgcheck \
-    nabu-fedora-configs-kde
+# echo "Installing KDE-specific config packages..."
+# dnf install -y --releasever=$RELEASEVER \
+#     --setopt=install_weak_deps=False \
+#     --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+#     --nogpgcheck \
+#     nabu-fedora-configs-kde
 
 # ==========================================================================
 # --- 创建临时用户 ---

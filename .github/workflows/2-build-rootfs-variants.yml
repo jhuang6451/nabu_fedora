@@ -16,9 +16,9 @@ on:
           - kde
           - niri
       build_version: # 自定义的输入字段名称
-        description: 'Input the build version, e.g., 42.4' # 输入字段的描述
+        description: 'Input the build version, e.g., 43.0' # 输入字段的描述
         required: true
-        default: '42.4'
+        default: '43.0'
         type: string
 
 permissions:
