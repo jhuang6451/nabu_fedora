@@ -93,6 +93,8 @@ dnf install -y \
     --exclude qt5-qtwebkit \
     --exclude kwebkitpart \
     @kde-desktop \
+    plasma-discover-packagekit \
+    tar \
     firefox \
     fcitx5 \
     fcitx5-configtool \
@@ -103,12 +105,12 @@ dnf install -y \
     google-noto-sans-sc-fonts
 # Can't remove google-noto-serif-vf-fonts & google-noto-sans-mono-vf-fonts because vlc-plugins-base needs it.
 
-# echo "Installing KDE-specific config packages..."
-# dnf install -y --releasever=$RELEASEVER \
-#     --setopt=install_weak_deps=False \
-#     --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
-#     --nogpgcheck \
-#     nabu-fedora-configs-kde
+echo "Installing KDE-specific config packages..."
+dnf install -y --releasever=$RELEASEVER \
+    --setopt=install_weak_deps=False \
+    --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --nogpgcheck \
+    nabu-fedora-configs-kde
 
 # ==========================================================================
 # --- 创建临时用户 ---
