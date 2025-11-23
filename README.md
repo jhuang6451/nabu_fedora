@@ -17,7 +17,7 @@ A set of scripts and GitHub Actions workflows to build a custom Fedora 42 image 
 
 > [!WARNING]
 > Since this project uses the community-supported mainline kernel, some hardware features are not yet fully supported or have bugs.
-> For nabu devices with **Samsung UFS chip**, please use [**this build**](https://github.com/jhuang6451/nabu_fedora/releases/tag/release-20251023-1013) instead.
+> For nabu devices with **Samsung UFS chip**, please use [**this build**](https://github.com/jhuang6451/nabu_fedora/releases/tag/release-20251123-0559) (or any newer builds with Samsung UFS fix) instead.
 
 > [!NOTE]
 > The initial username is `user` and the password is `fedora`.
