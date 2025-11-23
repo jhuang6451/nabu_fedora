@@ -15,7 +15,7 @@ set -e
 
 # 定义变量
 ROOTFS_DIR="$PWD/fedora-rootfs-base"
-RELEASEVER="42"
+RELEASEVER="43"
 ARCH="aarch64"
 
 # 发行版本号从 Workflow 获取
@@ -110,31 +110,43 @@ dnf install -y --releasever=$RELEASEVER \
     --allowerasing \
     @core
 
-echo 'Installing basic packages...'
 dnf install -y --releasever=$RELEASEVER \
-    --repofrompath="pocketblue,https://download.copr.fedorainfracloud.org/results/onesaladleaf/pocketblue/fedora-$RELEASEVER-$ARCH/" \
     --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     --exclude dracut-config-rescue \
     @hardware-support \
     alsa-utils \
-    pipewire-pulse \
     pulseaudio-utils \
+    pipewire-pulseaudio \
+    pipewire-alsa \
     systemd-boot-unsigned \
     systemd-ukify \
-    xiaomi-nabu-firmware \
     binutils \
     qrtr \
-    rmtfs \
     pd-mapper \
-    tqftpserv \
-    q6voiced \
     NetworkManager-wifi \
-    glibc-langpack-en \
-    qbootctl \
-    nabu-fedora-configs-core
+    glibc-langpack-en
 # systemd-boot-unsigned provides efi stub.
+
+echo 'Installing from pocketblue...'
+dnf install -y --releasever=$RELEASEVER \
+    --repofrompath="pocketblue,https://download.copr.fedorainfracloud.org/results/pocketblue/common/fedora-$RELEASEVER-$ARCH/" \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    --exclude dracut-config-rescue \
+    tqftpserv \
+    rmtfs \
+    qbootctl \
+    q6voiced
+
+echo 'Installing core...'
+dnf install -y --releasever=$RELEASEVER \
+    --repofrompath="nabu_fedora_packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
+    nabu-fedora-configs-core \
+    xiaomi-nabu-firmware
 
 # ==========================================================================
 # --- 安装额外软件包和配置 ---
@@ -148,14 +160,15 @@ dnf install -y --releasever=$RELEASEVER \
     NetworkManager-tui \
     glibc-langpack-zh \
     glibc-langpack-ru \
-    vim
+    vim \
+    nano
 
 # ==========================================================================
 # --- 配置 Copr ---
 # ==========================================================================
 echo "Configuring Copr repositories..."
 dnf copr enable -y jhuang6451/nabu_fedora_packages
-dnf copr enable -y onesaladleaf/pocketblue
+dnf copr enable -y pocketblue/common
 dnf copr enable -y jhuang6451/jhuang6451
 
 # ==========================================================================
@@ -181,7 +194,7 @@ if [ -d "/boot/efi/EFI/fedora" ] && [ -n "$(find /boot/efi/EFI/fedora -name '*.e
     echo "SUCCESS: UKI file(s) found!"
     ls -lR /boot/efi/
 else
-    echo "CRITICAL ERROR: No UKI file found after RPM installation!" >&2
+    echo "❎ ERROR: No UKI file found after RPM installation!" >&2
     exit 1
 fi
 
@@ -222,7 +235,7 @@ if [ -d "$EFI_DIR" ] && [ -n "$(ls -A "$EFI_DIR")" ]; then
     echo "Found EFI files to package:"
     ls -lR "$EFI_DIR"
     (cd "$EFI_DIR" && zip -r "$PROJECT_ROOT/efi-files.zip" .)
-    echo "EFI files packaged into efi-files.zip"
+    echo "✅ EFI files packaged into efi-files.zip"
 
 # 7. 创建可刷写的 ESP 镜像
     echo "Creating flashable ESP image (flashable_esp.img)..."
