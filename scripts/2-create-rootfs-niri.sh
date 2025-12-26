@@ -62,12 +62,20 @@ set -e
 # ==========================================================================
 # --- 安装软件包和配置 ---
 # ==========================================================================
-echo "Installing config files..."
+# echo "Installing config files..."
+# dnf install -y \
+#     --releasever=$RELEASEVER \
+#     --nogpgcheck \
+#     --setopt=install_weak_deps=False \
+#     --repofrompath="nabu-fedora-packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+#     nabu-fedora-configs-niri
+
+echo "Installing testing config files..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
-    --repofrompath="nabu-fedora-packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="nabu-fedora-packages-test,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_test/fedora-$RELEASEVER-$ARCH/" \
     nabu-fedora-configs-niri
 
 echo "Installing basic packages..."
