@@ -172,43 +172,58 @@ umount_chroot_fs
 trap - EXIT
 sync
 
-# 5. 将 rootfs 打包为 img 文件
-echo "Creating rootfs image: $ROOTFS_NAME (size: $IMG_SIZE)..."
+# 5. 创建文件系统，并将 rootfs 打包为 img 文件
+echo "Creating btrfs rootfs image: $ROOTFS_NAME (size: $IMG_SIZE)..."
 fallocate -l "$IMG_SIZE" "$ROOTFS_NAME"
-mkfs.ext4 -L fedora_root -F "$ROOTFS_NAME"
+mkfs.btrfs -L fedora_root "$ROOTFS_NAME"
+
 MOUNT_DIR=$(mktemp -d)
-trap 'umount "$MOUNT_DIR" &>/dev/null; rmdir -- "$MOUNT_DIR"' EXIT
-mount -o loop "$ROOTFS_NAME" "$MOUNT_DIR"
+
+umount_btrfs() {
+    echo "Cleaning up..."
+    umount -l "$MOUNT_DIR/var/cache" 2>/dev/null || true
+    umount -l "$MOUNT_DIR/var/log" 2>/dev/null || true
+    umount -l "$MOUNT_DIR/home" 2>/dev/null || true
+    umount -l "$MOUNT_DIR" 2>/dev/null || true
+    rmdir -- "$MOUNT_DIR"
+}
+trap umount_btrfs EXIT
+
+echo "Creating subvolumes: @, @home, @log, @cache..."
+mount "$ROOTFS_NAME" "$MOUNT_DIR"
+btrfs subvolume create "$MOUNT_DIR/@"
+btrfs subvolume create "$MOUNT_DIR/@home"
+btrfs subvolume create "$MOUNT_DIR/@log"
+btrfs subvolume create "$MOUNT_DIR/@cache"
+umount "$MOUNT_DIR"
+
+echo "Mounting subvolumes..."
+mount -o subvol=@ "$ROOTFS_NAME" "$MOUNT_DIR"
+mkdir -p "$MOUNT_DIR/home"
+mkdir -p "$MOUNT_DIR/var/log"
+mkdir -p "$MOUNT_DIR/var/cache"
+mount -o subvol=@home "$ROOTFS_NAME" "$MOUNT_DIR/home"
+mount -o subvol=@log "$ROOTFS_NAME" "$MOUNT_DIR/var/log"
+mount -o subvol=@cache "$ROOTFS_NAME" "$MOUNT_DIR/var/cache"
 
 echo "Copying rootfs contents to image..."
 rsync -aHAXx --info=progress2 "$ROOTFS_DIR/" "$MOUNT_DIR/"
 
-echo "Unmounting image..."
-umount "$MOUNT_DIR"
-rmdir "$MOUNT_DIR"
-trap - EXIT
+echo "Minimizing the Btrfs image..."
 sync
+USED_SIZE=$(btrfs inspect-internal min-dev-size "$MOUNT_DIR" | awk '{print $1}')
+SAFETY_MARGIN=$((500 * 1024 * 1024))
+NEW_FS_SIZE=$((USED_SIZE + SAFETY_MARGIN))
 
-# 6. 最小化并压缩 img 文件
-echo "Minimizing the image file..."
-e2fsck -f -y "$ROOTFS_NAME" || true
-resize2fs -M "$ROOTFS_NAME"
-e2fsck -f -y "$ROOTFS_NAME" || true
+echo "Resizing filesystem to ${NEW_FS_SIZE} bytes..."
+btrfs filesystem resize "$NEW_FS_SIZE" "$MOUNT_DIR"
 
-MIN_BLOCKS=$(dumpe2fs -h "$ROOTFS_NAME" 2>/dev/null | grep 'Block count:' | awk '{print $3}')
-BLOCK_SIZE_KB=$(dumpe2fs -h "$ROOTFS_NAME" 2>/dev/null | grep 'Block size:' | awk '{print $3 / 1024}')
+umount_btrfs
+trap - EXIT
 
-if ! [[ "$MIN_BLOCKS" =~ ^[0-9]+$ ]] || ! [[ "$BLOCK_SIZE_KB" =~ ^[0-9]+$ ]]; then
-    echo "❎ ERROR: Failed to retrieve block size or block count from image." >&2
-    exit 1
-fi
-
-MIN_SIZE_KB=$((MIN_BLOCKS * BLOCK_SIZE_KB))
-SAFETY_MARGIN_KB=204800
-NEW_SIZE_KB=$((MIN_SIZE_KB + SAFETY_MARGIN_KB))
-
-truncate -s "${NEW_SIZE_KB}K" "$ROOTFS_NAME"
-resize2fs "$ROOTFS_NAME"
+# 6. 截断 img 文件多余空间
+echo "Truncating image file..."
+truncate -s "$NEW_FS_SIZE" "$ROOTFS_NAME"
 
 # 7. 压缩 img 文件
 echo "INFO: Compressing '${ROOTFS_NAME}' using zstd..."
