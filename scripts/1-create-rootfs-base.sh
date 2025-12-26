@@ -169,7 +169,7 @@ dnf install -y --releasever=$RELEASEVER \
 echo "Configuring Copr repositories..."
 dnf copr enable -y jhuang6451/nabu_fedora_packages
 dnf copr enable -y pocketblue/common
-dnf copr enable -y jhuang6451/jhuang6451
+dnf copr enable -y jhuang6451/nerd-fonts
 
 # ==========================================================================
 # --- 安装内核 ---

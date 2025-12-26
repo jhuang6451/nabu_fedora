@@ -70,23 +70,35 @@ dnf install -y \
     --repofrompath="nabu-fedora-packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
     nabu-fedora-configs-niri
 
-echo "Installing basic & experience packages..."
+echo "Installing basic packages..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     @standard \
     @base-graphical \
-    chrony \
+    chrony
+
+echo "Installing experience packages..."
+dnf install -y \
+    --releasever=$RELEASEVER \
+    --nogpgcheck \
+    --setopt=install_weak_deps=False \
     nautilus \
-    firefox \
     fcitx5 \
     fcitx5-configtool \
     fcitx5-gtk \
     fcitx5-qt \
-    fcitx5-chinese-addons
+    fcitx5-chinese-addons \
+    fastfetch \
+    kitty \
+    qt6-multimedia \
+    wl-clipboard \
+    cava \
+    mate-polkit \
+    greetd
 
-echo "Installing from yalter/niri..."
+echo "Installing niri..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
@@ -97,46 +109,27 @@ dnf install -y \
     --exclude swaylock \
     niri
 
-echo "Installing from solopasha/hyprland..."
+echo "Installing DMS..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
-    --repofrompath="hyprland,https://download.copr.fedorainfracloud.org/results/solopasha/hyprland/fedora-$RELEASEVER-$ARCH/" \
-    swww \
-    waypaper
+    --repofrompath="danklinux,https://download.copr.fedorainfracloud.org/results/avengemedia/danklinux/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="dms,https://download.copr.fedorainfracloud.org/results/avengemedia/dms/fedora-$RELEASEVER-$ARCH/" \
+    dms \
+    quickshell \
+    matugen \
+    dms-greeter \
+    cliphist \
+    danksearch \
+    dgop
 
-echo "Installing from jhuang6451/jhuang6451..."
-dnf install -y \
-    --releasever=$RELEASEVER \
-    --nogpgcheck \
-    --setopt=install_weak_deps=False \
-    swaylock-effects \
-    e-thos-menu \
-    wvkbd \
-    sddm-astronaut-theme \
-    agave-nf \
-    maple-mono-normal-nf \
-    jetbrains-mono-nf \
-    ubuntu-sans-nf
-
-
-echo "Installing other tools for niri..."
-dnf install -y \
-    --releasever=$RELEASEVER \
-    --nogpgcheck \
-    --setopt=install_weak_deps=False \
-    waybar \
-    fuzzel \
-    mako \
-    swayidle \
-    kitty \
-    fastfetch
-
+# ==========================================================================
+# --- 配置 Copr ---
+# ==========================================================================
 echo "Configuring Copr repository..."
-dnf copr enable -y yalter/niri
-dnf copr enable -y solopasha/hyprland
-dnf copr enable -y jhuang6451/jhuang6451
+dnf copr enable -y avengemedia/danklinux
+dnf copr enable -y avengemedia/dms
 
 # ==========================================================================
 # --- 创建临时用户 ---
