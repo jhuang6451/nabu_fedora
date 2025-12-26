@@ -29,4 +29,5 @@ RUN dnf config-manager addrepo --from-repofile=https://cli.github.com/packages/r
     rpm-build \
     cpio \
     systemd-boot \
+    btrfs-progs \
     && dnf clean all
