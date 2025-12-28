@@ -156,6 +156,7 @@ echo "Sudo access for group 'wheel' has been configured."
 echo "Applying systemd presets..."
 systemctl preset-all
 systemctl set-default graphical.target
+systemctl --user preset-all
 echo "Systemd presets applied."
 
 # ==========================================================================
