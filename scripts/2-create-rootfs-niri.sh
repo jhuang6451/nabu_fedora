@@ -100,7 +100,7 @@ dnf install -y \
     fcitx5-chinese-addons \
     fastfetch \
     kitty \
-    qt6-multimedia \
+    qt6-qtmultimedia \
     wl-clipboard \
     cava \
     mate-polkit \
