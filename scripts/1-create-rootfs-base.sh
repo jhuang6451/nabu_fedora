@@ -15,7 +15,7 @@ set -e
 
 # 定义变量
 ROOTFS_DIR="$PWD/fedora-rootfs-base"
-RELEASEVER="42"
+RELEASEVER="43"
 ARCH="aarch64"
 
 # 发行版本号从 Workflow 获取
@@ -130,6 +130,7 @@ dnf install -y --releasever=$RELEASEVER \
 # systemd-boot-unsigned provides efi stub.
 
 echo 'Installing from pocketblue...'
+dnf install -y --releasever=$RELEASEVER \
     --repofrompath="pocketblue,https://download.copr.fedorainfracloud.org/results/pocketblue/common/fedora-$RELEASEVER-$ARCH/" \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
