@@ -62,12 +62,15 @@ set -e
 # ==========================================================================
 # --- 安装软件包和配置 ---
 # ==========================================================================
-echo "Installing config files..."
+echo "Installing from nabu_fedora_packages..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
     --repofrompath="nabu-fedora-packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    swaylock-effects \
+    wvkbd \
+    sddm-astronaut-theme \
     nabu-fedora-configs-niri
 
 echo "Installing basic & experience packages..."
@@ -79,7 +82,7 @@ dnf install -y \
     @base-graphical \
     chrony \
     nautilus \
-    firefox \
+    helium-browser \
     fcitx5 \
     fcitx5-configtool \
     fcitx5-gtk \
@@ -106,20 +109,13 @@ dnf install -y \
     swww \
     waypaper
 
-echo "Installing from jhuang6451/jhuang6451..."
+echo "Installing from jhuang6451/nerd-fonts..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
-    swaylock-effects \
-    e-thos-menu \
-    wvkbd \
-    sddm-astronaut-theme \
     agave-nf \
-    maple-mono-normal-nf \
-    jetbrains-mono-nf \
-    ubuntu-sans-nf
-
+    maple-mono-normal-nf
 
 echo "Installing other tools for niri..."
 dnf install -y \
@@ -136,7 +132,6 @@ dnf install -y \
 echo "Configuring Copr repository..."
 dnf copr enable -y yalter/niri
 dnf copr enable -y solopasha/hyprland
-dnf copr enable -y jhuang6451/jhuang6451
 
 # ==========================================================================
 # --- 创建临时用户 ---

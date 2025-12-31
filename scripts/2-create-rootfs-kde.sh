@@ -93,7 +93,7 @@ dnf install -y \
     --exclude qt5-qtwebkit \
     --exclude kwebkitpart \
     @kde-desktop \
-    firefox \
+    helium-browser \
     fcitx5 \
     fcitx5-configtool \
     kcm-fcitx5 \

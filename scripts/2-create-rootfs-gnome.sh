@@ -82,7 +82,7 @@ dnf install -y \
     @standard \
     @base-graphical \
     @gnome-desktop \
-    firefox \
+    helium-browser \
     fcitx5 \
     fcitx5-configtool \
     fcitx5-gtk \
