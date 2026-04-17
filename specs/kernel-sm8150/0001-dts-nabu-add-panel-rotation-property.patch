@@ -1,0 +1,23 @@
+From: jhuang6451 <xplayerhtz123@outlook.com>
+Date: Thu, 16 Oct 2025 10:23:51 +0000
+Subject: [PATCH] dts: qcom: sm8150: nabu: Add panel rotation property
+
+The physical orientation of the panel is portrait, while the
+intended default usage is landscape. Add the rotation property
+to correct the display orientation in early boot stages like
+the framebuffer console.
+
+---
+ arch/arm64/boot/dts/qcom/sm8150-xiaomi-nabu.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm64/boot/dts/qcom/sm8150-xiaomi-nabu.dts
++++ b/arch/arm64/boot/dts/qcom/sm8150-xiaomi-nabu.dts
+@@ -587,6 +587,7 @@
+ 		vddio-supply = <&vreg_l14a_1p8>;
+ 		reset-gpios = <&tlmm 6 GPIO_ACTIVE_LOW>;
+ 		backlight = <&backlight>;
++		rotation = <90>;
+ 
+ 		ports {
+ 			#address-cells = <1>;

@@ -1,0 +1,2 @@
+# Force /dev/rtc symlink to point to rtc1 instead of rtc0.
+SUBSYSTEM=="rtc", KERNEL=="rtc1", SYMLINK+="rtc", OPTIONS+="link_priority=10"

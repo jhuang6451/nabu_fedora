@@ -1,0 +1,12 @@
+[Unit]
+Description=Nabu - Disable WiFi Modules on Shutdown
+After=network-online.target graphical.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecStop=/usr/bin/rmmod ath10k_snoc ath10k_core
+
+[Install]
+WantedBy=default.target

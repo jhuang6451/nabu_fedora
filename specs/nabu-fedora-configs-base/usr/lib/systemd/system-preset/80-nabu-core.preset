@@ -1,0 +1,4 @@
+enable rmtfs.service
+enable tqftpserv.service
+enable ath10k-shutdown.service
+enable btrfs-expand.service

@@ -1,0 +1,15 @@
+[Unit]
+Description=Nabu - Expand Btrfs root filesystem to fill partition
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+ConditionPathExists=!/var/lib/nabu-btrfs-expanded
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/btrfs filesystem resize max /
+ExecStartPost=/usr/bin/mkdir -p /var/lib
+ExecStartPost=/usr/bin/touch /var/lib/nabu-btrfs-expanded
+
+[Install]
+WantedBy=sysinit.target

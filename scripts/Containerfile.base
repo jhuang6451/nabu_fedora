@@ -1,0 +1,70 @@
+# ==============================================================================
+# Containerfile.base
+#
+# Fedora Bootc Base Image for Xiaomi Pad 5 (nabu) - Headless / No GUI
+#
+# This image contains only the kernel, firmware, hardware drivers,
+# and essential system configuration. It serves as the foundation
+# for all DE variant images (gnome, kde, niri).
+#
+# Author: jhuang6451
+# ==============================================================================
+
+FROM quay.io/fedora/fedora-bootc:43
+
+# --- 1. Configure Copr Repositories ---
+# These repos host Nabu-specific packages (kernel, firmware, configs, etc.)
+RUN dnf -y install 'dnf5-command(copr)' && \
+    dnf -y copr enable jhuang6451/nabu_fedora_packages && \
+    dnf -y copr enable pocketblue/common
+
+# --- 2. Install Nabu Hardware Support ---
+# Core hardware enablement: modem services, Wi-Fi, audio config
+RUN dnf -y install --setopt=install_weak_deps=False \
+    alsa-utils \
+    pulseaudio-utils \
+    pipewire-pulseaudio \
+    pipewire-alsa \
+    qrtr \
+    pd-mapper \
+    rmtfs \
+    tqftpserv \
+    qbootctl \
+    q6voiced \
+    NetworkManager-wifi \
+    NetworkManager-tui \
+    glibc-langpack-en \
+    glibc-langpack-zh \
+    glibc-langpack-ru \
+    vim \
+    nano \
+    btrfs-progs \
+    && dnf clean all
+
+# --- 3. Install Kernel & Core Configuration ---
+# kernel-sm8150: Custom mainline kernel for sm8150 platform
+# nabu-fedora-configs-core: dracut, ukify, fstab, udev, preset configs
+# nabu-fedora-dualboot-efi: rEFInd boot manager files for ESP
+# xiaomi-nabu-firmware: Device firmware blobs
+#
+# NOTE: The kernel RPM's %posttrans will attempt to generate the UKI.
+#       In the container build environment, /boot/efi may not be a real
+#       mount point, but the UKI will still be generated at the configured
+#       path. We handle its final placement in extract-and-pack.sh.
+RUN dnf -y install --setopt=install_weak_deps=False \
+    --exclude dracut-config-rescue \
+    kernel-sm8150 \
+    xiaomi-nabu-firmware \
+    nabu-fedora-configs-core \
+    nabu-fedora-dualboot-efi \
+    systemd-boot-unsigned \
+    systemd-ukify \
+    binutils \
+    && dnf clean all
+
+# --- 4. System Configuration ---
+# Base image is headless; set multi-user target
+RUN systemctl set-default multi-user.target
+
+# Write variant identifier for the nabu-user-sync service
+RUN echo "base" > /etc/nabu-variant

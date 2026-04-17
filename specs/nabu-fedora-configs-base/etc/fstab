@@ -1,0 +1,3 @@
+# /etc/fstab: static file system information.
+PARTLABEL=linux  /                  btrfs  rw,compress=zstd:1,discard=async,subvol=/@  0 0
+PARTLABEL=esp    /boot/efi/         vfat   fmask=0022,dmask=0022                      0 1

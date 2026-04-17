@@ -1,0 +1,12 @@
+# bootc-image-builder configuration for Nabu
+# This file configures the disk image layout produced by bootc-image-builder.
+# Ref: https://osbuild.org/docs/bootc/
+
+# --- Filesystem Layout ---
+# Use Btrfs for the root partition to enable:
+#   - Online resize (btrfs filesystem resize max /)
+#   - Transparent compression
+#   - Subvolume management for bootc/ostree
+[[customizations.filesystem]]
+mountpoint = "/"
+minsize = "5 GiB"
