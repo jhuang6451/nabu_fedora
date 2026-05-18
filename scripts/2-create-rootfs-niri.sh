@@ -21,12 +21,12 @@ fi
 BASE_ROOTFS_DIR="$1"
 VARIANT_NAME="niri"
 ROOTFS_DIR="$PWD/fedora-rootfs-$VARIANT_NAME"
-RELEASEVER="42"
+RELEASEVER="44"
 ARCH="aarch64"
 BUILD_VERSION="${BUILD_VERSION}"
 ROOTFS_NAME="fedora-${BUILD_VERSION}-nabu-rootfs-${VARIANT_NAME}.img"
 ROOTFS_COMPRESSED_NAME="${ROOTFS_NAME}.zst"
-IMG_SIZE="5G"
+IMG_SIZE="7G" # Btrfs needs a bit more space for metadata initially
 
 SUDOERS_FILE="/etc/sudoers.d/99-wheel-user"
 
@@ -62,12 +62,15 @@ set -e
 # ==========================================================================
 # --- 安装软件包和配置 ---
 # ==========================================================================
-echo "Installing config files..."
+echo "Installing from nabu_fedora_packages..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
-    --repofrompath="nabu-fedora-packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages/fedora-$RELEASEVER-$ARCH/" \
+    --repofrompath="nabu-fedora-packages,https://download.copr.fedorainfracloud.org/results/jhuang6451/nabu_fedora_packages_test/fedora-$RELEASEVER-$ARCH/" \
+    swaylock-effects \
+    wvkbd \
+    sddm-astronaut-theme \
     nabu-fedora-configs-niri
 
 echo "Installing basic & experience packages..."
@@ -78,7 +81,8 @@ dnf install -y \
     @standard \
     @base-graphical \
     chrony \
-    firefox \
+    nautilus \
+    helium-browser \
     fcitx5 \
     fcitx5-configtool \
     fcitx5-gtk \
@@ -105,20 +109,13 @@ dnf install -y \
     swww \
     waypaper
 
-echo "Installing from jhuang6451/jhuang6451..."
+echo "Installing from jhuang6451/nerd-fonts..."
 dnf install -y \
     --releasever=$RELEASEVER \
     --nogpgcheck \
     --setopt=install_weak_deps=False \
-    swaylock-effects \
-    e-thos-menu \
-    wvkbd \
-    sddm-astronaut-theme \
     agave-nf \
-    maple-mono-normal-nf \
-    jetbrains-mono-nf \
-    ubuntu-sans-nf
-
+    maple-mono-normal-nf
 
 echo "Installing other tools for niri..."
 dnf install -y \
@@ -130,13 +127,11 @@ dnf install -y \
     mako \
     swayidle \
     kitty \
-    thunar \
     fastfetch
 
 echo "Configuring Copr repository..."
 dnf copr enable -y yalter/niri
 dnf copr enable -y solopasha/hyprland
-dnf copr enable -y jhuang6451/jhuang6451
 
 # ==========================================================================
 # --- 创建临时用户 ---
@@ -172,42 +167,50 @@ trap - EXIT
 sync
 
 # 5. 将 rootfs 打包为 img 文件
-echo "Creating rootfs image: $ROOTFS_NAME (size: $IMG_SIZE)..."
-fallocate -l "$IMG_SIZE" "$ROOTFS_NAME"
-mkfs.ext4 -L fedora_root -F "$ROOTFS_NAME"
+echo "Creating Btrfs rootfs image: $ROOTFS_NAME (size: $IMG_SIZE)..."
+truncate -s "$IMG_SIZE" "$ROOTFS_NAME"
+mkfs.btrfs -L fedora_root "$ROOTFS_NAME"
+
 MOUNT_DIR=$(mktemp -d)
-trap 'umount "$MOUNT_DIR" &>/dev/null; rmdir -- "$MOUNT_DIR"' EXIT
 mount -o loop "$ROOTFS_NAME" "$MOUNT_DIR"
 
-echo "Copying rootfs contents to image..."
-rsync -aHAXx --info=progress2 "$ROOTFS_DIR/" "$MOUNT_DIR/"
+echo "Creating Btrfs subvolumes..."
+btrfs subvolume create "$MOUNT_DIR/@root"
+btrfs subvolume create "$MOUNT_DIR/@home"
+btrfs subvolume create "$MOUNT_DIR/@var"
+btrfs subvolume create "$MOUNT_DIR/@log"
+btrfs subvolume create "$MOUNT_DIR/@cache"
 
-echo "Unmounting image..."
+# 准备挂载点以进行内容复制
+TARGET_DIR=$(mktemp -d)
+mount -o loop,subvol=@root "$ROOTFS_NAME" "$TARGET_DIR"
+mkdir -p "$TARGET_DIR"/{home,var}
+mount -o loop,subvol=@home "$ROOTFS_NAME" "$TARGET_DIR/home"
+mount -o loop,subvol=@var "$ROOTFS_NAME" "$TARGET_DIR/var"
+mkdir -p "$TARGET_DIR/var"/{log,cache}
+mount -o loop,subvol=@log "$ROOTFS_NAME" "$TARGET_DIR/var/log"
+mount -o loop,subvol=@cache "$ROOTFS_NAME" "$TARGET_DIR/var/cache"
+
+echo "Copying rootfs contents to subvolumes..."
+rsync -aHAXx --info=progress2 "$ROOTFS_DIR/" "$TARGET_DIR/"
+
+echo "Unmounting subvolumes and image..."
+umount "$TARGET_DIR/var/cache"
+umount "$TARGET_DIR/var/log"
+umount "$TARGET_DIR/var"
+umount "$TARGET_DIR/home"
+umount "$TARGET_DIR"
 umount "$MOUNT_DIR"
-rmdir "$MOUNT_DIR"
-trap - EXIT
+rmdir "$TARGET_DIR" "$MOUNT_DIR"
 sync
 
-# 6. 最小化并压缩 img 文件
-echo "Minimizing the image file..."
-e2fsck -f -y "$ROOTFS_NAME" || true
-resize2fs -M "$ROOTFS_NAME"
-e2fsck -f -y "$ROOTFS_NAME" || true
-
-MIN_BLOCKS=$(dumpe2fs -h "$ROOTFS_NAME" 2>/dev/null | grep 'Block count:' | awk '{print $3}')
-BLOCK_SIZE_KB=$(dumpe2fs -h "$ROOTFS_NAME" 2>/dev/null | grep 'Block size:' | awk '{print $3 / 1024}')
-
-if ! [[ "$MIN_BLOCKS" =~ ^[0-9]+$ ]] || ! [[ "$BLOCK_SIZE_KB" =~ ^[0-9]+$ ]]; then
-    echo "Error: Failed to retrieve block size or block count from image." >&2
-    exit 1
-fi
-
-MIN_SIZE_KB=$((MIN_BLOCKS * BLOCK_SIZE_KB))
-SAFETY_MARGIN_KB=204800
-NEW_SIZE_KB=$((MIN_SIZE_KB + SAFETY_MARGIN_KB))
-
-truncate -s "${NEW_SIZE_KB}K" "$ROOTFS_NAME"
-resize2fs "$ROOTFS_NAME"
+# 6. Btrfs 镜像优化
+echo "Optimizing Btrfs image..."
+mount -o loop "$ROOTFS_NAME" "$MOUNT_DIR"
+btrfs filesystem defragment -r "$MOUNT_DIR"
+sync
+umount "$MOUNT_DIR"
+rmdir "$MOUNT_DIR"
 
 # 7. 压缩 img 文件
 echo "INFO: Compressing '${ROOTFS_NAME}' using zstd..."
@@ -215,5 +218,5 @@ echo "INFO: Compressing '${ROOTFS_NAME}' using zstd..."
 zstd -T0 -v "${ROOTFS_NAME}"
 
 echo "=============================================================================="
-echo "Compressed niri rootfs image created successfully: $ROOTFS_COMPRESSED_NAME"
+echo "✅ Compressed niri rootfs image created successfully: $ROOTFS_COMPRESSED_NAME"
 echo "=============================================================================="

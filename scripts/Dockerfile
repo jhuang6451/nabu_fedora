@@ -1,5 +1,5 @@
-# 使用官方的 Fedora 42 镜像作为基础
-FROM fedora:42
+# 使用官方的 Fedora 44 镜像作为基础
+FROM fedora:44
 
 
 # 添加 GitHub CLI 仓库，更新 dnf 缓存并安装所有需要的工具
@@ -22,6 +22,7 @@ RUN dnf config-manager addrepo --from-repofile=https://cli.github.com/packages/r
     dosfstools \
     mtools \
     e2fsprogs \
+    btrfs-progs \
     grub2-tools \
     grub2-efi-aa64-modules \
     libguestfs-tools \

@@ -100,8 +100,8 @@ if [ ${#ASSETS_TO_UPLOAD[@]} -eq 0 ]; then
 fi
 
 # 6. 准备并创建 Release
-TAG="release-$(date +'%Y%m%d-%H%M')"
-RELEASE_TITLE="Fedora for Nabu ${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
+TAG="test-release-$(date +'%Y%m%d-%H%M')"
+RELEASE_TITLE="[TEST] Fedora for Nabu ${BUILD_VERSION}-$(date +'%Y%m%d-%H%M')"
 
 CHANGELOG="* No changelog provided."
 if [ -f "docs/release-notes.md" ]; then
@@ -127,7 +127,7 @@ for ASSET in "${ASSETS_TO_UPLOAD[@]}"; do
 done
 
 RELEASE_NOTES=$(cat <<EOF
-Automated build of Fedora 42 for Xiaomi Pad 5 (nabu).
+Automated TEST build of Fedora 44 for Xiaomi Pad 5 (nabu).
 
 ## Assets
 
@@ -138,12 +138,12 @@ EOF
 )
 
 # 7. 创建 Release 并上传所有资产
-echo "INFO: Creating GitHub release '${TAG}' with ${#ASSETS_TO_UPLOAD[@]} assets..."
+echo "INFO: Creating GitHub pre-release '${TAG}' with ${#ASSETS_TO_UPLOAD[@]} assets..."
 
 gh release create "$TAG" \
     --title "$RELEASE_TITLE" \
     --notes "$RELEASE_NOTES" \
-    --latest \
+    --prerelease \
     "${ASSETS_TO_UPLOAD[@]}"
 
 echo "SUCCESS: Release ${TAG} created successfully with all assets."
